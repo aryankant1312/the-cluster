@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+  --color-persona-bg: #0a2f2f;
+  --color-persona-surface: #d8cdb8;
+  --color-persona-surface-alt: #c9bda3;
+  --color-persona-titlebar: #6b6b9e;
+  --color-persona-accent: #f4d03f;
+  --color-persona-fg: #111111;
+  --color-persona-fg-muted: #444444;
+  --color-persona-border: #111111;
+  --color-persona-danger: #b4001a;
+
+  --font-persona-chrome: var(--font-vt323), "MS Sans Serif", monospace;
+  --font-persona-body: var(--font-plex-mono), monospace;
+  --font-persona-headline: var(--font-vt323), monospace;
+
+  --radius-persona: 0px;
+}
+
+:root[data-persona="dotm"] {
+  --color-persona-bg: #000000;
+  --color-persona-surface: #111214;
+  --color-persona-surface-alt: #1a1b1e;
+  --color-persona-titlebar: #111214;
+  --color-persona-accent: #b4001a;
+  --color-persona-fg: #f5f5f5;
+  --color-persona-fg-muted: #8a8a8a;
+  --color-persona-border: rgba(245, 245, 245, 0.12);
+  --color-persona-danger: #b4001a;
+
+  --font-persona-chrome: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-inter), sans-serif;
+  --font-persona-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), sans-serif;
+  --font-persona-headline: var(--font-space-mono), monospace;
+
+  --radius-persona: 14px;
+}
+
+@theme inline {
+  --color-bg: var(--color-persona-bg);
+  --color-surface: var(--color-persona-surface);
+  --color-surface-alt: var(--color-persona-surface-alt);
+  --color-titlebar: var(--color-persona-titlebar);
+  --color-accent: var(--color-persona-accent);
+  --color-fg: var(--color-persona-fg);
+  --color-fg-muted: var(--color-persona-fg-muted);
+  --color-border: var(--color-persona-border);
+  --color-danger: var(--color-persona-danger);
+
+  --font-chrome: var(--font-persona-chrome);
+  --font-body: var(--font-persona-body);
+  --font-headline: var(--font-persona-headline);
+
+  --radius-window: var(--radius-persona);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-persona-body);
+}
+
+/* DEV persona: hard 1px borders, no soft shadows, no gradients */
+[data-persona="dev"] .win98-border {
+  border: 1px solid #000;
+  box-shadow:
+    inset -1px -1px 0 #000,
+    inset 1px 1px 0 #fff,
+    inset -2px -2px 0 #808080,
+    inset 2px 2px 0 #dfdfdf;
+}
+
+/* DOTM persona: frosted glass chrome */
+[data-persona="dotm"] .macos-glass {
+  background: rgba(17, 18, 20, 0.72);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--color-persona-border);
+}
+
+/* DEV window content: cloudy-sky fill, matching the retro reference */
+[data-persona="dev"] .win98-sky {
+  background-color: #6fa8d8;
+  background-image:
+    radial-gradient(ellipse 70px 26px at 12% 22%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 90px 32px at 40% 12%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 110px 38px at 72% 28%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 80px 30px at 92% 15%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 100px 36px at 25% 55%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 90px 32px at 65% 62%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 70px 26px at 90% 70%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 110px 40px at 15% 85%, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(ellipse 90px 34px at 55% 90%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 72%),
+    linear-gradient(180deg, #3f7fc4 0%, #6fa8d8 35%, #a9d0ec 75%, #cfe6f7 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}

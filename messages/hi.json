@@ -1,0 +1,53 @@
+{
+  "enter": {
+    "proceed": "[आगे बढ़ें]"
+  },
+  "chooseFace": {
+    "line": "हर किसी के दो चेहरे होते हैं. जिसे देखने के लिए तैयार हो, उसे चुनो.",
+    "devLabel": "DEV — जो महसूस करता है",
+    "dotmLabel": "DOTM — जो पीछे नहीं हटता"
+  },
+  "toggle": {
+    "personaSwitchNotice": "तुमने पहले {persona} चुना था. जब तैयार हो तब वापस आना.",
+    "language": "भाषा",
+    "persona": "पर्सोना"
+  },
+  "mobileGate": {
+    "devTitle": "द क्लस्टर",
+    "devMessage": "इस प्रोग्राम के लिए बड़ी स्क्रीन चाहिए.",
+    "devButton": "ठीक है",
+    "dotmMessage": "यह अनुभव डेस्कटॉप पर खुलता है. बाद में वापस आना."
+  },
+  "countdown": {
+    "title": "द क्लस्टर",
+    "twentyFourHours": "चौबीस घंटे.",
+    "arrived": "स्पेक्ट्रम आ चुका है."
+  },
+  "nav": {
+    "home": "होम",
+    "music": "म्यूज़िक",
+    "portfolio": "पोर्टफोलियो",
+    "shows": "शोज़",
+    "team": "टीम",
+    "contact": "संपर्क",
+    "shutDown": "शट डाउन…"
+  },
+  "shows": {
+    "title": "शोज़",
+    "past": "पिछले",
+    "upcoming": "आगामी",
+    "venueTbd": "स्थान तय नहीं",
+    "dateTbd": "2027 — तारीख तय नहीं",
+    "mapView": "मैप",
+    "listView": "सूची"
+  },
+  "team": {
+    "title": "टीम"
+  },
+  "notFound": {
+    "devTitle": "404 — तुम नक़्शे से भटक गए.",
+    "devRetry": "फिर कोशिश करें",
+    "devCancel": "रद्द करें",
+    "dotmMessage": "404. क्लस्टर सब कुछ नहीं रखता."
+  }
+}

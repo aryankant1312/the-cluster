@@ -1,0 +1,53 @@
+{
+  "enter": {
+    "proceed": "[proceed]"
+  },
+  "chooseFace": {
+    "line": "EVERYONE HAS TWO FACES. CHOOSE THE ONE YOU'RE READY TO SEE.",
+    "devLabel": "DEV — THE ONE WHO FEELS",
+    "dotmLabel": "DOTM — THE ONE WHO DOESN'T FLINCH"
+  },
+  "toggle": {
+    "personaSwitchNotice": "YOU CHOSE {persona} FIRST. COME BACK WHEN YOU'RE READY.",
+    "language": "Language",
+    "persona": "Persona"
+  },
+  "mobileGate": {
+    "devTitle": "THE CLUSTER",
+    "devMessage": "THIS PROGRAM REQUIRES A LARGER DISPLAY.",
+    "devButton": "OK",
+    "dotmMessage": "THIS EXPERIENCE OPENS ON DESKTOP. RETURN LATER."
+  },
+  "countdown": {
+    "title": "THE CLUSTER",
+    "twentyFourHours": "TWENTY-FOUR HOURS.",
+    "arrived": "THE SPECTRUM HAS ARRIVED."
+  },
+  "nav": {
+    "home": "Home",
+    "music": "Music",
+    "portfolio": "Portfolio",
+    "shows": "Shows",
+    "team": "Team",
+    "contact": "Contact",
+    "shutDown": "Shut Down…"
+  },
+  "shows": {
+    "title": "SHOWS",
+    "past": "PAST",
+    "upcoming": "UPCOMING",
+    "venueTbd": "VENUE TBD",
+    "dateTbd": "2027 — DATE TBD",
+    "mapView": "MAP",
+    "listView": "LIST"
+  },
+  "team": {
+    "title": "TEAM"
+  },
+  "notFound": {
+    "devTitle": "404 — YOU WANDERED OFF THE MAP.",
+    "devRetry": "Retry",
+    "devCancel": "Cancel",
+    "dotmMessage": "404. THE CLUSTER DOESN'T KEEP EVERYTHING."
+  }
+}
