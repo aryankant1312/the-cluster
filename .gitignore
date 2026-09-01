@@ -32,6 +32,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the template is meant to be committed
+!.env.example
+
+# local SQLite database — holds real booking contact details and fan posts
+/.data/
 
 # vercel
 .vercel
@@ -47,3 +52,12 @@ next-env.d.ts
 
 # local Claude Code tool settings
 .claude/
+
+# Asset staging from the pre-launch compression pass (2026-09-01).
+# _originals holds the uncompressed masters of everything in public/, and
+# _quarantine holds files nothing references. Both are kept on disk so the
+# pass is reversible; neither belongs in git history, which is the whole
+# point of having done the pass at all.
+/_originals/
+/_quarantine/
+/_compressed/

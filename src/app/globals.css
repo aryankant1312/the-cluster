@@ -1,15 +1,27 @@
+@import url("https://api.fontshare.com/v2/css?f[]=tanker@400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Hedvig+Letters+Serif:opsz@12..24&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Manrope:wght@400;500;600;700&family=Monda:wght@400;500;600;700&family=Outfit:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&family=Red+Hat+Display:wght@400;500;600;700&family=Rethink+Sans:wght@400;500;600;700&family=Tillana:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+@import "./originkit-section-themes.css";
+@import "./originkit-section-theme.css";
+
+.font-tanker {
+  font-family: 'Tanker', 'Inter Tight', sans-serif;
+}
 
 :root {
-  --color-persona-bg: #0a2f2f;
-  --color-persona-surface: #d8cdb8;
-  --color-persona-surface-alt: #c9bda3;
-  --color-persona-titlebar: #6b6b9e;
-  --color-persona-accent: #f4d03f;
-  --color-persona-fg: #111111;
-  --color-persona-fg-muted: #444444;
-  --color-persona-border: #111111;
-  --color-persona-danger: #b4001a;
+  --_bg: #0a2f2f;
+  --_surface: #d8cdb8;
+  --_surface-alt: #c9bda3;
+  --_titlebar: #0f4c95;
+  --_menubar: #2196f3;
+  --_window-bg: #e3f0fc;
+  --_taskbar: #c0c0c0;
+  --_accent: #f4d03f;
+  --_fg: #111111;
+  --_fg-muted: #444444;
+  --_border: #111111;
+  --_danger: #b4001a;
 
   --font-persona-chrome: var(--font-vt323), "MS Sans Serif", monospace;
   --font-persona-body: var(--font-plex-mono), monospace;
@@ -19,33 +31,199 @@
 }
 
 :root[data-persona="dotm"] {
-  --color-persona-bg: #000000;
-  --color-persona-surface: #111214;
-  --color-persona-surface-alt: #1a1b1e;
-  --color-persona-titlebar: #111214;
-  --color-persona-accent: #b4001a;
-  --color-persona-fg: #f5f5f5;
-  --color-persona-fg-muted: #8a8a8a;
-  --color-persona-border: rgba(245, 245, 245, 0.12);
-  --color-persona-danger: #b4001a;
+  --_bg: #000000;
+  --_surface: #111214;
+  --_surface-alt: #1a1b1e;
+  --_titlebar: #111214;
+  --_accent: #b4001a;
+  --_fg: #f5f5f5;
+  --_fg-muted: #8a8a8a;
+  --_border: rgba(245, 245, 245, 0.12);
+  --_danger: #b4001a;
 
-  --font-persona-chrome: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-inter), sans-serif;
-  --font-persona-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), sans-serif;
-  --font-persona-headline: var(--font-space-mono), monospace;
+  --font-persona-chrome: var(--font-cinzel), "Cinzel", serif;
+  --font-persona-body: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-persona-headline: var(--font-cinzel-decorative), "Cinzel Decorative", var(--font-cinzel), serif;
 
   --radius-persona: 14px;
 }
 
+.boot-dev-fonts {
+  --font-persona-chrome: var(--font-vt323), "MS Sans Serif", monospace;
+  --font-persona-body: var(--font-vt323), monospace;
+  --font-persona-headline: var(--font-vt323), monospace;
+}
+
+/**
+ * The DOTM door's phase fades.
+ *
+ * CSS RATHER THAN FRAMER, DELIBERATELY. A framer entry animation is driven by
+ * `requestAnimationFrame`, which browsers suspend in a backgrounded or
+ * non-compositing tab — and an entry fade that stalls does not merely look
+ * wrong, it leaves the thing it was revealing invisible. DOTM's DEN was caught
+ * at opacity 0.21 and held there, which is a login screen nobody can read.
+ *
+ * A keyframe on the compositor finishes whatever the main thread is doing, and
+ * `forwards` means a suspended tab that never gets to run it still ends at the
+ * final frame rather than the first.
+ */
+@keyframes dotm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.dotm-fade-in {
+  animation: dotm-fade-in 320ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dotm-fade-in {
+    animation: none;
+  }
+}
+
+/**
+ * The DOTM door's own faces, pinned.
+ *
+ * THE PERSONA COOKIE IS NOT A RELIABLE ANSWER HERE. `data-persona` on `<html>`
+ * says which desktop the visitor was last on, and somebody arriving at the
+ * DOTM entrance straight from DEV — or on a first visit, where it defaults to
+ * `dev` — got the DEV token block: DOTM's DEN was set in VT323, a pixel face,
+ * on the screen that is supposed to introduce the other persona entirely.
+ * Observed in a production build before this existed.
+ *
+ * The mirror of `.boot-dev-fonts` above, and for the same reason: a door
+ * declares its own costume rather than inheriting one from wherever the
+ * visitor happens to have been.
+ */
+.boot-dotm-fonts {
+  --font-persona-chrome: var(--font-cinzel), "Cinzel", serif;
+  --font-persona-body: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-persona-headline: var(--font-cinzel-decorative), "Cinzel Decorative",
+    var(--font-cinzel), serif;
+
+  font-family: var(--font-persona-body);
+}
+
+/* ─────────────────────────────────────────── The desktop display faces ── */
+
+/**
+ * Pixelpurl for DEV, King for DOTM — across the desktops and every
+ * window on them.
+ *
+ * SCOPED TO `.persona-desktop`, WHICH IS THE WHOLE POINT. The wrapper is set
+ * in `app/(persona)/layout.tsx` and nothing else wears it, so `/enter` and
+ * both `/choose-face` doors keep the faces they were built in. Putting these
+ * on `[data-persona]` instead would have reached the boot screens too — the
+ * attribute lives on `<html>`, above every route — and the BIOS post typing
+ * itself out in a decorative display face is not the screen that was
+ * designed.
+ *
+ * THE `font-family` REDECLARATION IS LOAD-BEARING. `body` resolves
+ * `var(--font-persona-body)` once, at `body`, and children inherit the
+ * computed family rather than the variable — so overriding the token further
+ * down reaches Tailwind's `font-body` / `font-chrome` / `font-headline`
+ * utilities but never plain inherited text. Restating `font-family` here is
+ * what makes the inherited case follow.
+ */
+[data-persona="dev"] .persona-desktop {
+  --font-persona-chrome: var(--font-pixelpurl), var(--font-vt323), "MS Sans Serif", monospace;
+  --font-persona-headline: var(--font-pixelpurl), var(--font-vt323), monospace;
+  --font-persona-body: var(--font-pixelpurl), var(--font-vt323), monospace;
+
+  font-family: var(--font-persona-body);
+}
+
+[data-persona="dotm"] .persona-desktop {
+  --font-persona-chrome: var(--font-king), var(--font-cinzel), serif;
+  --font-persona-headline: var(--font-king), var(--font-cinzel-decorative), serif;
+  --font-persona-body: var(--font-king), var(--font-cormorant), Georgia, serif;
+
+  font-family: var(--font-persona-body);
+}
+
+/**
+ * `.long-text` — the reading exemption.
+ *
+ * A display face is a costume, and a costume is unwearable at 13px across a
+ * paragraph. These are the surfaces where somebody is reading rather than
+ * looking: the bio, the lyric rail, the two forms, the notes, the fan feed.
+ * They take the persona's original body face back and leave everything around
+ * them — window title, headings, buttons, labels — in the new one.
+ *
+ * Only `--font-persona-body` is restored. A heading inside one of these still
+ * belongs to the costume.
+ */
+[data-persona="dev"] .persona-desktop .long-text {
+  --font-persona-body: var(--font-plex-mono), monospace;
+
+  font-family: var(--font-persona-body);
+}
+
+[data-persona="dotm"] .persona-desktop .long-text {
+  --font-persona-body: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+
+  font-family: var(--font-persona-body);
+}
+
+/**
+ * DIGITS THAT ARE DATA KEEP A FACE YOU CAN READ THEM IN.
+ *
+ * King sets `0123456789` as display forms. On a headline that is
+ * the point; on the desktop's live counters it is not — the Cluster count, the
+ * countdown, the clock, a track's elapsed time and the shows list all became
+ * decorative shapes where a number should be. Observed on the DOTM desktop
+ * before this rule existed: the two metric tiles over the wallpaper were
+ * unreadable. Pixelpurl has the same problem more mildly, being a bitmap face
+ * whose digits blur below about 14px.
+ *
+ * `tabular-nums` IS THE HOOK, AND IT IS NOT A COINCIDENCE. Every place in this
+ * codebase where digits have to be read as a value already asks for tabular
+ * figures — sixteen files do — because that is what stops a ticking clock or a
+ * counting-up total from jittering as its glyph widths change. So the set of
+ * "numbers somebody reads" is already marked, by a class that is there for a
+ * related reason and has no business being anywhere else. Nothing new has to
+ * be remembered or tagged: mark a number as tabular, as this codebase already
+ * does, and it stays legible.
+ *
+ * The surrounding label keeps the costume. It is the figure that reverts, not
+ * the tile it sits in.
+ */
+[data-persona="dev"] .persona-desktop .tabular-nums {
+  font-family: var(--font-vt323), monospace;
+}
+
+[data-persona="dotm"] .persona-desktop .tabular-nums {
+  font-family: var(--font-cinzel), "Cinzel", serif;
+}
+
 @theme inline {
-  --color-bg: var(--color-persona-bg);
-  --color-surface: var(--color-persona-surface);
-  --color-surface-alt: var(--color-persona-surface-alt);
-  --color-titlebar: var(--color-persona-titlebar);
-  --color-accent: var(--color-persona-accent);
-  --color-fg: var(--color-persona-fg);
-  --color-fg-muted: var(--color-persona-fg-muted);
-  --color-border: var(--color-persona-border);
-  --color-danger: var(--color-persona-danger);
+  --color-bg: var(--_bg);
+  --color-persona-bg: var(--_bg);
+  --color-surface: var(--_surface);
+  --color-persona-surface: var(--_surface);
+  --color-surface-alt: var(--_surface-alt);
+  --color-persona-surface-alt: var(--_surface-alt);
+  --color-titlebar: var(--_titlebar);
+  --color-persona-titlebar: var(--_titlebar);
+  --color-menubar: var(--_menubar);
+  --color-persona-menubar: var(--_menubar);
+  --color-window-bg: var(--_window-bg);
+  --color-persona-window-bg: var(--_window-bg);
+  --color-taskbar: var(--_taskbar);
+  --color-persona-taskbar: var(--_taskbar);
+  --color-accent: var(--_accent);
+  --color-persona-accent: var(--_accent);
+  --color-fg: var(--_fg);
+  --color-persona-fg: var(--_fg);
+  --color-fg-muted: var(--_fg-muted);
+  --color-persona-fg-muted: var(--_fg-muted);
+  --color-border: var(--_border);
+  --color-persona-border: var(--_border);
+  --color-danger: var(--_danger);
+  --color-persona-danger: var(--_danger);
 
   --font-chrome: var(--font-persona-chrome);
   --font-body: var(--font-persona-body);
@@ -65,7 +243,6 @@ body {
   font-family: var(--font-persona-body);
 }
 
-/* DEV persona: hard 1px borders, no soft shadows, no gradients */
 [data-persona="dev"] .win98-border {
   border: 1px solid #000;
   box-shadow:
@@ -75,27 +252,1119 @@ body {
     inset 2px 2px 0 #dfdfdf;
 }
 
-/* DOTM persona: frosted glass chrome */
+[data-persona="dev"] .win98-press {
+  transition: transform 60ms ease-out;
+}
+[data-persona="dev"] .win98-press:active {
+  transform: translate(1px, 1px);
+  box-shadow:
+    inset 1px 1px 0 #000,
+    inset -1px -1px 0 #fff,
+    inset 2px 2px 0 #808080,
+    inset -2px -2px 0 #dfdfdf;
+}
+
 [data-persona="dotm"] .macos-glass {
   background: rgba(17, 18, 20, 0.72);
   backdrop-filter: blur(20px);
   border: 1px solid var(--color-persona-border);
 }
 
-/* DEV window content: cloudy-sky fill, matching the retro reference */
+/* Persona top bar. It sits over the DEV navy and, in DOTM, over an arbitrary
+   wallpaper — so it carries its own foreground scale rather than inheriting
+   the persona body tokens, whose muted values are tuned for light surfaces
+   (#444 on the navy is ~1.3:1). Chrome children read --chrome-* instead of
+   the global tokens; anywhere else, those vars are unset and the defaults
+   still apply. Worst case here is ~7.7:1. */
+.persona-topbar {
+  color: #ffffff;
+  --chrome-fg-muted: rgba(255, 255, 255, 0.72);
+  --chrome-danger: #ff6b7a;
+}
+[data-persona="dev"] .persona-topbar {
+  background: #0a2f5c;
+}
+[data-persona="dotm"] .persona-topbar {
+  /* Opaque enough that a bright wallpaper cannot lift it into the text. */
+  background: rgba(10, 10, 11, 0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-persona-border);
+}
+
 [data-persona="dev"] .win98-sky {
-  background-color: #6fa8d8;
-  background-image:
-    radial-gradient(ellipse 70px 26px at 12% 22%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 90px 32px at 40% 12%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 110px 38px at 72% 28%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 80px 30px at 92% 15%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 100px 36px at 25% 55%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 90px 32px at 65% 62%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 70px 26px at 90% 70%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 110px 40px at 15% 85%, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0) 72%),
-    radial-gradient(ellipse 90px 34px at 55% 90%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 72%),
-    linear-gradient(180deg, #3f7fc4 0%, #6fa8d8 35%, #a9d0ec 75%, #cfe6f7 100%);
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-color: var(--color-persona-window-bg);
+  background-image: none;
+}
+
+.show-pin {
+  position: relative;
+  width: 26px;
+  height: 34px;
+}
+.show-pin-body {
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #b4001a;
+  border: 2px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.show-pin-dot {
+  position: absolute;
+  top: 7px;
+  left: 10px;
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+  border-radius: 50%;
+}
+.leaflet-tooltip.show-pin-badge {
+  background: #111214;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-family: var(--font-persona-chrome), sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.leaflet-tooltip.show-pin-badge::before {
+  border-top-color: #111214;
+}
+
+@keyframes portfolio-belt-scroll {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+.portfolio-belt-track {
+  width: max-content;
+  animation: portfolio-belt-scroll 40s linear infinite;
+}
+
+/* A scroll container with no visible gutter.
+
+   Windows and most Linux desktops paint a classic scrollbar — a grey track
+   with two arrow caps — and reserve space for it, so an `overflow-x-auto` row
+   carries that bar whether or not it has anywhere to scroll. On the DEV
+   taskbar that put a permanent scrollbar across the bottom-left of the screen,
+   under the quick-launch strip, at every window width.
+
+   Hiding the bar rather than switching the row to `overflow-hidden` keeps the
+   behaviour that made it `auto` in the first place: at a narrow viewport the
+   strip still scrolls — by wheel, trackpad, touch drag or keyboard — it just
+   no longer draws a gutter to advertise it. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* /enter boot screen: multi-ring pulse + glow around the play button. */
+@keyframes enter-play-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@keyframes enter-play-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 25px rgba(220, 38, 38, 0.45),
+      0 0 55px rgba(180, 0, 26, 0.25),
+      0 0 90px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 50px rgba(220, 38, 38, 0.75),
+      0 0 95px rgba(180, 0, 26, 0.5),
+      0 0 140px rgba(255, 255, 255, 0.25);
+  }
+}
+@keyframes enter-play-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* The DOTM door's loader, between the headline and DOTM's DEN.
+
+   Stepped rather than continuous: the eye reads a stepped rotation as a
+   mechanism doing work and a smooth one as a decoration turning. Declared
+   unconditionally rather than inside the reduced-motion guard below, because
+   this is the only thing on an otherwise black screen — with no animation it
+   is a static asterisk, which reads as a page that has died rather than one
+   that is working. It is a small, centred, non-translating spin, which is the
+   category of motion `prefers-reduced-motion` is least concerned with. */
+@keyframes dotm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Block caret for the typed sequences (/enter headline, DEV boot password).
+   Hard on/off, no fade — a soft pulse would undo the "someone is typing
+   this" feel that both screens are going for. */
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .caret-blink {
+    animation: caret-blink 1.06s steps(1, end) infinite;
+  }
+  .enter-play-ring {
+    animation: enter-play-glow 5.5s ease-in-out infinite;
+  }
+  .enter-play-ring::before,
+  .enter-play-ring::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 2px solid rgba(220, 38, 38, 0.65);
+    animation: enter-play-pulse 5.2s ease-out infinite;
+    pointer-events: none;
+  }
+  .enter-play-ring::after {
+    border-color: rgba(255, 255, 255, 0.35);
+    animation-delay: 2.6s;
+  }
+  .enter-play-spin {
+    animation: enter-play-spin 12s linear infinite;
+  }
+}
+
+/* Live Wallpaper Candle Flame flicker & waver animation */
+@keyframes candle-flame-waver {
+  0%, 100% {
+    transform: scaleY(1) scaleX(1) rotate(0deg);
+    opacity: 0.96;
+    filter: drop-shadow(0 0 8px rgba(255, 183, 3, 0.9)) drop-shadow(0 0 20px rgba(255, 153, 0, 0.6));
+  }
+  12% {
+    transform: scaleY(1.06) scaleX(0.95) rotate(-1.5deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(255, 200, 50, 0.95)) drop-shadow(0 0 25px rgba(255, 160, 0, 0.7));
+  }
+  28% {
+    transform: scaleY(0.94) scaleX(1.04) rotate(1deg);
+    opacity: 0.88;
+    filter: drop-shadow(0 0 6px rgba(255, 170, 0, 0.8)) drop-shadow(0 0 16px rgba(255, 130, 0, 0.5));
+  }
+  42% {
+    transform: scaleY(1.08) scaleX(0.92) rotate(-2deg);
+    opacity: 0.98;
+    filter: drop-shadow(0 0 14px rgba(255, 210, 80, 1)) drop-shadow(0 0 28px rgba(255, 170, 0, 0.75));
+  }
+  58% {
+    transform: scaleY(0.97) scaleX(1.02) rotate(1.8deg);
+    opacity: 0.92;
+    filter: drop-shadow(0 0 7px rgba(255, 180, 10, 0.85)) drop-shadow(0 0 18px rgba(255, 140, 0, 0.55));
+  }
+  74% {
+    transform: scaleY(1.04) scaleX(0.97) rotate(-1deg);
+    opacity: 0.97;
+    filter: drop-shadow(0 0 10px rgba(255, 195, 30, 0.9)) drop-shadow(0 0 22px rgba(255, 150, 0, 0.65));
+  }
+  88% {
+    transform: scaleY(0.98) scaleX(1.01) rotate(0.8deg);
+    opacity: 0.90;
+    filter: drop-shadow(0 0 8px rgba(255, 175, 0, 0.85)) drop-shadow(0 0 17px rgba(255, 135, 0, 0.5));
+  }
+}
+
+@keyframes candle-halo-pulse {
+  0%, 100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  30% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+  60% {
+    opacity: 0.65;
+    transform: scale(0.95);
+  }
+  85% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+.candle-flame-anim {
+  animation: candle-flame-waver 11s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.candle-halo-anim {
+  animation: candle-halo-pulse 9.5s ease-in-out infinite;
+}
+
+[data-persona="dev"] .text-xs {
+  font-size: 14px;
+}
+[data-persona="dev"] .text-sm {
+  font-size: 16px;
+}
+[data-persona="dev"] .text-base {
+  font-size: 18px;
+}
+[data-persona="dev"] .text-lg {
+  font-size: 20px;
+}
+[data-persona="dev"] .text-\[10px\] {
+  font-size: 12px;
+}
+[data-persona="dev"] .text-\[11px\] {
+  font-size: 13px;
+}
+
+/* DOTM Shows window.
+   Cinzel and Cormorant carry the rest of the DOTM persona, but a tour listing
+   is a schedule: dense city names, dates and counts. Engraved capitals and a
+   Garamond make that hard to scan, so this one window swaps in a tight
+   grotesque with a mono for the metadata.
+
+   Only the three persona font variables are reassigned, so every existing
+   font-headline / font-chrome / font-body class inside the window picks the
+   new pairing up without being touched. */
+[data-persona="dotm"] .shows-type {
+  --font-persona-headline: "Inter Tight", "Instrument Sans", system-ui, sans-serif;
+  --font-persona-chrome: "DM Mono", ui-monospace, "Geist Mono", monospace;
+  --font-persona-body: "Inter Tight", "Instrument Sans", system-ui, sans-serif;
+}
+[data-persona="dotm"] .shows-type .font-headline {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* The Four Flows timeline.
+   Same problem the Shows window has, and the same fix. Cinzel Decorative is
+   an engraved display face with heavy inline detail — beautiful at a title
+   card, noisy once it is carrying four station headings, four numerals and a
+   row of labels across a dark timeline. This swaps in a tight grotesque that
+   holds the same silhouette at a glance but resolves cleanly at small sizes.
+
+   Only the three persona font variables are reassigned, so every existing
+   font-headline / font-chrome / font-body class inside the panel picks the
+   new pairing up and every size, weight and tracking already set stays
+   exactly as it was. */
+.flows-type {
+  --font-persona-headline: "Inter Tight", "Instrument Sans", system-ui, sans-serif;
+  --font-persona-chrome: "DM Mono", ui-monospace, "Geist Mono", monospace;
+  --font-persona-body: "Inter Tight", "Instrument Sans", system-ui, sans-serif;
+}
+.flows-type .font-headline {
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* Glass over black, for the Four Flows stations.
+   Backdrop blur needs something behind it to blur; on a flat black ground
+   there is nothing, so the "glass" would read as a flat grey box. The panel
+   below therefore paints its own drifting colour field behind the track, and
+   this class is what samples it. */
+.flows-glass {
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.035) 45%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  /* One function, and no hand-written `-webkit-` twin. Declaring the prefixed
+     property alongside the standard one made Lightning CSS drop both from the
+     emitted rule — the tiles shipped with no blur at all. `macos-glass` a few
+     rules up has always used this plain single-function form and survives the
+     build, so this matches it; the prefix is added by the toolchain from the
+     configured browser targets, not by hand. */
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 24px 60px -28px rgba(0, 0, 0, 0.9);
+}
+
+/* Fine grain over the Four Flows colour field.
+   Wide, low-contrast gradients on a dark screen band into visible steps;
+   a little noise on top is what breaks the banding up. Kept in CSS rather
+   than as an inline style so the data URI is written once. */
+.flows-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* "+1" confirmation on a vote tap: rises out of the tube and fades.
+   Voting is uncapped, so there is no disabled state to signal success —
+   this glyph is the only acknowledgement a tap gets, which is why the
+   reduced-motion variant still shows it and simply stops it travelling. */
+@keyframes vote-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.85);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(1);
+  }
+}
+@keyframes vote-pop-static {
+  0%,
+  75% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+}
+.vote-pop {
+  animation: vote-pop 900ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vote-pop {
+    animation: vote-pop-static 900ms steps(1, end) forwards;
+  }
+}
+
+.hallway-frame {
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #0a0a0a;
+  box-shadow: 0 4px 60px rgba(0, 0, 0, 0.9);
+  transition:
+    filter 0.4s ease,
+    box-shadow 0.4s ease;
+}
+.hallway-frame:hover {
+  filter: brightness(1.35);
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.18),
+    0 4px 60px rgba(0, 0, 0, 0.9);
+}
+@keyframes hallway-mote-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hallway-mote {
+    animation: hallway-mote-float 7s ease-in-out infinite;
+  }
+}
+
+/* ── The admin surface ──────────────────────────────────────────────────────
+   /admin renders inside the same root layout as the two personas, so it
+   inherited `data-persona` theming it was never meant to have: a dark body
+   ground under DOTM, Cinzel Decorative on the section headings, and Cormorant
+   on the body copy. The white `bg-white` on <main> covered its own box, but the
+   body background behind it did not change, and every form control the page did
+   not explicitly colour was painted by the UA — which, with no `color-scheme`
+   declared anywhere in this project, means a dark field on a dark-mode browser.
+
+   Declaring `color-scheme: light` is the part that actually fixes the inputs.
+   The rest makes the route a plain light document regardless of which persona
+   cookie the visitor arrived with.
+
+   Scoped by `:has()` so nothing here can leak back into the desktops. */
+body:has(.admin-surface) {
+  background: #ffffff;
+  color: #111827;
+  color-scheme: light;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.admin-surface {
+  min-height: 100%;
+  background: #ffffff;
+  color-scheme: light;
+}
+
+/* The persona typefaces are applied through these tokens, so overriding the
+   tokens is what stops them reaching the headings — restating font-family on
+   every element would not, since the page's own classes set it downstream. */
+.admin-surface {
+  --font-persona-headline: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-persona-chrome: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-persona-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Form controls the page styles by hand still need a ground: a bare <input>
+   with no `bg-*` class is transparent, and transparent over a dark UA field is
+   the black box in the middle of an otherwise white form. */
+.admin-surface input,
+.admin-surface select,
+.admin-surface textarea {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.admin-surface input::placeholder,
+.admin-surface textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* The travelling segment in `WindowLoading`, shown while a window's dynamic
+   chunk is in flight. Transform-only so it never triggers layout. */
+@keyframes window-loading-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.window-loading-bar {
+  animation: window-loading-slide 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .window-loading-bar {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LIVE STATS — the subscribe / follow button, kept alive.
+
+   Two loops, doing different jobs. The sweep is a band of light crossing the
+   face, which says the button is live rather than painted on; the halo is a
+   ring leaving its edge, which is the "on air" idiom and is what carries at a
+   glance. Together they read as one pulse because they share a period.
+
+   `--cta-accent` is set inline from the panel's own brand colour, so one rule
+   serves YouTube red, Instagram magenta and Spotify green without three
+   variants — and the halo is mixed down from it rather than hardcoded, so it
+   never fights the button it is leaving.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes stat-cta-sweep {
+  0% { transform: translateX(-130%) skewX(-18deg); }
+  /* Rests off the far edge for the back half of the cycle: a band crossing
+     every second is a barber's pole, not a highlight. */
+  55%, 100% { transform: translateX(130%) skewX(-18deg); }
+}
+
+@keyframes stat-cta-halo {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cta-accent, #ffffff) 55%, transparent); }
+  70% { box-shadow: 0 0 0 12px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.stat-cta-live {
+  position: relative;
+  overflow: hidden;
+  animation: stat-cta-halo 2.9s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+.stat-cta-live::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Narrow and soft. A wide band washes the label out as it passes. */
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.42) 50%,
+    transparent 100%
+  );
+  /* Above the fill, below nothing — the label keeps its own stacking context
+     via `position: relative` on the content, so the band passes under text. */
+  pointer-events: none;
+  animation: stat-cta-sweep 2.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The button is still the loudest thing on the pane without either loop. */
+  .stat-cta-live,
+  .stat-cta-live::after {
+    animation: none;
+  }
+
+  .stat-cta-live::after {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DOCK · MUSIC TILE — a window onto a drifting field of notes.
+
+   The tile was a still collage of music glyphs. It is the door to the player,
+   which is the one thing on this dock that *moves* when you use it, so the
+   tile moves too: the artwork slides left to right behind a fixed rounded
+   frame, and what you see is a view onto something passing rather than a
+   picture sitting there.
+
+   TWO COPIES, TRANSLATED BY EXACTLY HALF. The track is 200% wide and holds the
+   same artwork twice, so `-50%` and `0%` are pixel-identical states and the
+   loop has no seam to hide. Same trick as `portfolio-belt-scroll` above.
+
+   LINEAR, AND NOTHING ELSE. An eased loop accelerates and slows once a cycle,
+   which the eye reads as a bounce — the one thing this must not do. Constant
+   speed is what makes it read as flowing.
+
+   The slow layer runs at roughly half the rate of the near one. Parallax is
+   what turns two sliding images into depth, and depth is the difference
+   between a window and a wipe.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes dock-music-drift {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.dock-music-drift {
+  animation: dock-music-drift 7.5s linear infinite;
+}
+
+.dock-music-drift-slow {
+  animation: dock-music-drift 17s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Parked mid-cycle rather than at a keyframe edge, so the still frame is a
+     composed view of the field and not the seam between two copies of it. */
+  .dock-music-drift,
+  .dock-music-drift-slow {
+    animation: none;
+    transform: translate3d(-25%, 0, 0);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SIGN-IN — the icon that has to be found before anything else can happen.
+
+   Both intros now end at a locked door, and the key is one small control in
+   the corner of a screen that is otherwise a full-bleed animation. It cannot
+   just appear and wait: with motion running behind it, a static mark is the
+   one thing on screen NOT moving, which is precisely how an eye learns to
+   skip something.
+
+   THE NUDGE RUNS ON A DUTY CYCLE, not continuously. A ring leaves the icon
+   every few seconds and then it rests — the "someone is at the door" idiom. A
+   permanent pulse becomes wallpaper inside ten seconds, which strands a
+   visitor on a screen whose way forward they have stopped seeing.
+
+   When the nudge *starts* is set by the component rather than here, so each
+   persona can hold its own beat first.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes signin-nudge-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  /* Out and gone by 40%, then nothing until the cycle comes round again. The
+     rest is what stops this reading as a loading spinner. */
+  40%,
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@keyframes signin-nudge-tilt {
+  0%,
+  62%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  68% {
+    transform: translate3d(0, -3px, 0) rotate(-5deg);
+  }
+  74% {
+    transform: translate3d(0, 0, 0) rotate(4deg);
+  }
+  80% {
+    transform: translate3d(0, -1px, 0) rotate(-2deg);
+  }
+  86% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+.signin-nudge {
+  animation: signin-nudge-tilt 4.2s ease-in-out infinite;
+}
+
+.signin-nudge-ring {
+  animation: signin-nudge-ring 4.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The ring goes entirely and the icon holds still. What is left is a
+     high-contrast control in a corner, which was always the fallback — the
+     motion drew the eye, it never carried the meaning. */
+  .signin-nudge,
+  .signin-nudge-ring {
+    animation: none;
+  }
+  .signin-nudge-ring {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────── The coming-soon swirl ──────
+   Two counter-rotating rings of type, overlapping into a figure-eight, each
+   with a hollow centre holding one half of a play/pause control.
+
+   PORTED FROM PLAIN CSS, WITH TWO DELIBERATE CHANGES. The original selected
+   its two halves with `:nth-child(1 of .wrapper)`; that `of S` syntax is
+   recent enough to be worth not depending on, so each half carries an
+   explicit class instead. And the original drove play/pause from a hidden
+   `:checked` checkbox, which cannot also start an audio element — React state
+   writes `data-playing` on the stage and both the animation and the track
+   read it from there.
+
+   The geometry is unchanged: 28 angular slots, `--h` as the ring diameter in
+   `em`, and a font-size in container-query units so the whole figure scales
+   to whatever window it is dropped in. `container-type: size` on the stage is
+   what makes `cqh`/`cqw` resolve — without it they fall back to the viewport
+   and the rings outgrow the window. */
+
+.swirl-stage {
+  container-type: size;
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.swirl-container {
+  position: relative;
+  display: flex;
+  font-size: min(0.9cqh, 0.45cqw);
+  --h: 100em;
+  height: var(--h);
+  width: calc(2 * var(--h) - 5.5em);
+}
+
+.swirl-wrapper {
+  position: absolute;
+  height: 100%;
+  aspect-ratio: 1;
+  display: grid;
+}
+
+.swirl-wrapper-b {
+  right: 0;
+}
+
+.swirl-ring {
+  position: absolute;
+  inset: 0;
+  --dur: 10s;
+  display: grid;
+  align-items: center;
+  animation: swirl-spin var(--dur) linear infinite;
+}
+
+.swirl-wrapper-b .swirl-ring {
+  animation-direction: reverse;
+}
+
+.swirl-ring span {
+  position: absolute;
+  width: 50%;
+  color: #fff;
+  font-family: var(--font-chrome), monospace;
+  font-weight: 700;
+  font-size: calc(var(--h) / 10);
+  rotate: calc(360deg / 28 * var(--nth) * var(--dir));
+  animation: swirl-fade var(--dur) linear infinite;
+  animation-delay: calc(-1 * var(--dur) / 28 * var(--nth));
+  text-shadow:
+    0 0 1em var(--glow),
+    0 0 0.5em var(--glow),
+    0 0 0.25em var(--glow);
+}
+
+.swirl-wrapper-a .swirl-ring span {
+  left: 50%;
+  text-align: end;
+  transform-origin: 0% 50%;
+  --dir: 1;
+  animation-direction: reverse;
+}
+
+.swirl-wrapper-b .swirl-ring span {
+  right: 50%;
+  text-align: start;
+  transform-origin: 100% 50%;
+  --dir: -1;
+}
+
+@keyframes swirl-spin {
+  100% {
+    rotate: 360deg;
+  }
+}
+
+@keyframes swirl-fade {
+  0%,
+  10% {
+    opacity: 0;
+  }
+  55%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Paused: the letters hold wherever they are rather than snapping home, which
+   is the difference between a stopped machine and a reset one. */
+.swirl-stage[data-playing="false"] .swirl-ring,
+.swirl-stage[data-playing="false"] .swirl-ring span {
+  animation-play-state: paused;
+}
+
+/* ── The control in each hollow centre ── */
+
+.swirl-btn {
+  position: absolute;
+  width: 20em;
+  aspect-ratio: 1;
+  place-self: center;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.5s ease-in-out;
+}
+
+.swirl-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 8px;
+  border-radius: 50%;
+}
+
+.swirl-col {
+  width: 10px;
+  position: relative;
+  display: grid;
+  transition: inherit;
+}
+
+.swirl-dot {
+  width: 3em;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 4px solid;
+  margin-block: 2px;
+  transition: inherit;
+}
+
+/* Hover pulls the dots together and lights them — the whole control reads as
+   one object reacting, rather than as fifteen circles that happen to move. */
+.swirl-btn:hover .swirl-dot {
+  filter: drop-shadow(0 0 1em var(--glo)) drop-shadow(0 0 0.5em var(--glo));
+  margin-block: -2px;
+}
+
+/* Whichever control is not currently applicable collapses to nothing. */
+.swirl-stage[data-playing="true"] .swirl-btn-play,
+.swirl-stage[data-playing="false"] .swirl-btn-pause {
+  scale: 0;
+  pointer-events: none;
+}
+
+/* ── DEV keeps the source palette: a full-spectrum ring, green play, amber
+      pause. It is the one persona whose whole face is other people's
+      chrome, so borrowed colour is in character. ── */
+
+.swirl-stage-dev .swirl-ring span {
+  --glow: hsl(calc(360deg / 28 * var(--nth)) 100% 50%);
+}
+
+.swirl-stage-dev .swirl-btn-play .swirl-dot {
+  border-color: hsl(calc(120deg - 15deg * (4 - var(--nDot))) 100% calc(25% + 6.25% * (4 - var(--nDot))));
+  --glo: #0b0;
+}
+
+.swirl-stage-dev .swirl-btn-pause .swirl-dot {
+  border-color: hsl(calc(30deg - 15deg * var(--nDot)) 100% 50%);
+  --glo: red;
+}
+
+.swirl-stage-dev .swirl-btn-play:hover .swirl-dot {
+  border-color: #bff;
+}
+
+.swirl-stage-dev .swirl-btn-pause:hover .swirl-dot {
+  border-color: #fdd;
+}
+
+/* ── DOTM: black, white, red, and nothing else.
+
+      The ring does not hold one flat red. Hue sweeps a narrow 34° arc from
+      rose through scarlet to ember while lightness rises toward the top of
+      the pass, so the type looks lit from a single moving source rather than
+      printed in one ink — which is what a single `#b4001a` for all 28 letters
+      actually looks like at speed.
+
+      Every seventh slot is a `•`, and those are struck in solid red with a
+      white halo — the inverse of the letters. That inversion is the only
+      thing marking where one "COMING SOON" ends and the next begins. ── */
+
+.swirl-stage-dotm .swirl-ring span {
+  --glow: hsl(
+    calc(346deg + 34deg * var(--nth) / 28) 100%
+      calc(44% + 14% * var(--nth) / 28)
+  );
+}
+
+.swirl-stage-dotm .swirl-ring span.swirl-bullet {
+  color: #ff2244;
+  --glow: #fff;
+  text-shadow:
+    0 0 0.8em #fff,
+    0 0 0.35em rgba(255, 255, 255, 0.7);
+}
+
+.swirl-stage-dotm .swirl-btn-play .swirl-dot {
+  border-color: hsl(352deg 100% calc(30% + 11% * (4 - var(--nDot))));
+  --glo: #ff2244;
+}
+
+.swirl-stage-dotm .swirl-btn-pause .swirl-dot {
+  border-color: hsl(0deg 0% calc(58% + 9% * var(--nDot)));
+  --glo: #fff;
+}
+
+.swirl-stage-dotm .swirl-btn-play:hover .swirl-dot {
+  border-color: #fff;
+}
+
+.swirl-stage-dotm .swirl-btn-pause:hover .swirl-dot {
+  border-color: #ff2244;
+}
+
+/* Portrait: the figure-eight stands up rather than lying down. Straight from
+   the source, with the same class substitution. */
+@media (orientation: portrait) {
+  .swirl-container {
+    font-size: min(0.9cqw, 0.45cqh);
+    width: var(--h);
+    height: calc(2 * var(--h) - 11.5em);
+  }
+
+  .swirl-wrapper {
+    width: 100%;
+    height: unset;
+    right: unset;
+  }
+
+  .swirl-wrapper-b {
+    bottom: 0;
+  }
+
+  .swirl-ring {
+    justify-items: center;
+    align-items: unset;
+  }
+
+  .swirl-ring span {
+    height: 50%;
+    width: unset;
+    display: grid;
+  }
+
+  .swirl-wrapper-a .swirl-ring span {
+    bottom: 50%;
+    left: unset;
+    text-align: end;
+    transform-origin: 50% 100%;
+    --dir: 1;
+    animation-direction: reverse;
+  }
+
+  .swirl-wrapper-b .swirl-ring span {
+    top: 50%;
+    right: unset;
+    text-align: start;
+    transform-origin: 50% 0%;
+    --dir: -1;
+    align-items: end;
+  }
+}
+
+/* The rings are the entire content of this window, so under reduced motion
+   they hold still rather than disappearing — a frozen figure-eight of type is
+   still the thing the window is for. */
+@media (prefers-reduced-motion: reduce) {
+  .swirl-ring,
+  .swirl-ring span,
+  .swirl-btn,
+  .swirl-dot {
+    animation-play-state: paused !important;
+    transition: none !important;
+  }
+}
+
+/* ────────────────────────────────────────────── The Cluster Wall's tiles ── */
+
+/**
+ * The vote arrows and the speaker, revealed with the tile.
+ *
+ * HOVER IS NOT THE ONLY WAY IN. `:hover` alone would hide these from every
+ * keyboard, and `:focus-within` on the tile is what lets Tab reach an arrow and
+ * see it arrive. The `(hover: none)` block then pins them open on anything with
+ * no pointer to hover with at all — a control that exists only under a mouse is
+ * a control half the world does not have.
+ *
+ * OPACITY, NOT `display`. The buttons stay in the accessibility tree and in the
+ * tab order whatever they look like, and a fade is interruptible where a
+ * remount is not: moving the cursor along a row of tiles crosses several of
+ * them per second, and mounting and unmounting four elements each time is work
+ * that shows up as a stutter on the one surface that must not stutter.
+ */
+.wall-controls {
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.wall-tile:hover .wall-controls,
+.wall-tile:focus-within .wall-controls {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .wall-controls {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wall-controls {
+    transition: none;
+  }
+}
+
+/* ─────────────────────────────────────── The costume faces, given room ── */
+
+/**
+ * SIZE AND SPREAD FOR THE TWO DISPLAY FACES.
+ *
+ * Pixelpurl and Lonedruida were both being set at sizes chosen for a text
+ * face, and neither is one. Lonedruida is a narrow engraved display face whose
+ * letters very nearly touch at their default sidebearings, so a window title
+ * or a tile caption came out as one dark ligatured mass — legible only because
+ * you already knew what it said. Pixelpurl is a bitmap face with a small
+ * x-height for its em, so at 13px it reads a size and a half smaller than the
+ * number suggests.
+ *
+ * THE SIZE HALF IS NOT DONE HERE. It is `size-adjust` on the two `@font-face`
+ * declarations in `app/layout.tsx`, which scales the glyphs inside an unchanged
+ * em box — so every existing `text-sm`, `text-[13px]` and `text-2xl` in the two
+ * desktops grows together, in proportion, with no component touched and no
+ * chance of a nested rule compounding. Doing it with a CSS `font-size` multiple
+ * would have needed `em`, and `em` inside `em` multiplies.
+ *
+ * THE SPREAD HALF IS HERE, because tracking has no `@font-face` equivalent.
+ * It is inherited rather than multiplied, so nesting is safe.
+ *
+ * WHAT IS EXEMPT, AND WHY. `.tabular-nums` and `.long-text` already opt out of
+ * the costume for exactly this reason — one is data somebody reads a value off,
+ * the other is a paragraph somebody reads a sentence in — and both revert to a
+ * text face that needs none of this. Anything that has set its own tracking
+ * keeps it: `tracking-*` utilities land on the element itself and win on
+ * specificity over an inherited value, which is why the wide uppercase labels
+ * across both desktops are unaffected.
+ */
+[data-persona="dotm"] .persona-desktop {
+  letter-spacing: 0.045em;
+}
+
+/* DEV'S TRACKING IS BACK TO NORMAL, with the size that went with it. The pair
+   were added together to lift a bitmap face; the result read as overscaled, so
+   both are reverted. DOTM keeps its tracking — King is still a display face
+   set tight, and the spread there is doing real work. */
+
+[data-persona="dotm"] .persona-desktop .long-text,
+.persona-desktop .tabular-nums {
+  letter-spacing: normal;
+}
+
+/* ── The Vault's code field ───────────────────────────────────────────────
+   White, and made to stay white.
+
+   THE COLOUR WAS ALREADY DECLARED. `text-white` is on the element and
+   `getComputedStyle` agrees — `color: rgb(255,255,255)`. What reaches the
+   screen is a different property: `-webkit-text-fill-color` paints the glyphs
+   and beats `color` outright when anything sets it. Two things routinely do.
+
+   One is the UA. Nothing in this project declares `color-scheme`, so form
+   controls are painted with whichever defaults the OS theme implies — the
+   same omission the `/admin` block above documents, where it produced a dark
+   field on a light form. Here it runs the other way: on a machine in light
+   mode the UA's own field styling supplies a dark fill, and the field is a
+   near-black box on a near-black ground.
+
+   The other is autofill. A password manager offering to fill a field marked
+   `type="password"` triggers `:-webkit-autofill`, and Chrome's UA rule for it
+   sets both a background and a text fill that no author `color` can displace.
+   The `inset` box-shadow below is the standard way to paint over that
+   background, because `background-color` itself is likewise ignored there.
+
+   `color-scheme: dark` is declared on the field rather than on the desktop:
+   DEV's own vault is a deliberate white field with black type, and a scheme
+   set at desktop level would reach it too. */
+.vault-code-input {
+  color-scheme: dark;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ff0033;
+}
+
+.vault-code-input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.42);
+  opacity: 1; /* Firefox dims placeholders by default; the colour above is the intent. */
+}
+
+.vault-code-input:-webkit-autofill,
+.vault-code-input:-webkit-autofill:hover,
+.vault-code-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #0b0b0b inset;
+  caret-color: #ff0033;
 }

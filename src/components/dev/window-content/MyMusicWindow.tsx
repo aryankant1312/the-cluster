@@ -1,41 +1,43 @@
-import Image, { type StaticImageData } from "next/image";
-import theBeginning from "../../../../public/images/covers/666-the-beginning.jpg";
-import findingPeace from "../../../../public/images/covers/finding-peace.jpg";
-import theTwoFaces from "../../../../public/images/covers/666-the-two-faces.jpg";
-import spectrumSoon from "../../../../public/images/countdown/the-dotm-spectrum.png";
+import { folders, myMusicEntries, trackArtwork, tracks, trackIndexById } from "@/content/tracks";
+// The keyed PNG, not the delivered JPEG. A JPEG cannot carry alpha, so the
+// artwork's white card came with it and needed a white plate to hide against.
+import folderIcon from "../../../../public/images/dev/music/folder-icon.png";
+import { MusicTile } from "./MusicTile";
 
-const RELEASES: Array<{ title: string; art?: StaticImageData }> = [
-  { title: "It's OK" },
-  { title: "666 – The Beginning", art: theBeginning },
-  { title: "Finding Peace", art: findingPeace },
-  { title: "666 – The Two Faces (upcoming)", art: theTwoFaces },
-  { title: "The DOTM Spectrum (upcoming)", art: spectrumSoon },
-  { title: "Singles" },
-];
-
-export function MyMusicWindow() {
+export function MyMusicWindow({
+  onSelectTrack,
+  onOpenFolder,
+}: {
+  onSelectTrack: (index: number) => void;
+  onOpenFolder: (folderId: string) => void;
+}) {
   return (
-    <div>
-      <ul className="space-y-1">
-        {RELEASES.map((release) => (
-          <li
-            key={release.title}
-            className="win98-border bg-white/90 flex items-center gap-2 px-2 py-1 text-black"
-          >
-            {release.art ? (
-              <div className="relative w-8 h-8 shrink-0 overflow-hidden">
-                <Image src={release.art} alt="" fill className="object-cover" sizes="32px" />
-              </div>
-            ) : (
-              <div className="w-8 h-8 shrink-0 bg-persona-surface-alt border border-black/30" />
-            )}
-            <span>{release.title}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 text-xs text-fg-muted">
-        FULL DISCOGRAPHY MIND MAP — COMING SOON.
-      </p>
+    <div className="grid grid-cols-3 gap-3 place-items-center py-1">
+      {myMusicEntries.map((entry) => {
+        if (entry.type === "track") {
+          const index = trackIndexById(entry.trackId);
+          const t = tracks[index];
+          return (
+            <MusicTile
+              key={t.id}
+              icon={trackArtwork(t)}
+              label={t.title}
+              onOpen={() => onSelectTrack(index)}
+            />
+          );
+        }
+        const folder = folders.find((f) => f.id === entry.folderId);
+        if (!folder) return null;
+        return (
+          <MusicTile
+            key={folder.id}
+            icon={folderIcon}
+            label={folder.title}
+            variant="folder"
+            onOpen={() => onOpenFolder(folder.id)}
+          />
+        );
+      })}
     </div>
   );
 }

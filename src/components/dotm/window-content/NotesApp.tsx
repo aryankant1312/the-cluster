@@ -27,7 +27,8 @@ export function NotesApp({ onPost }: { onPost: (note: StickyNote) => void }) {
   };
 
   return (
-    <div>
+    // Reading surface. See `.long-text` in globals.css.
+    <div className="long-text">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

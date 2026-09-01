@@ -1,6 +1,6 @@
 {
   "enter": {
-    "proceed": "[आगे बढ़ें]"
+    "proceed": "आगे बढ़ें"
   },
   "chooseFace": {
     "line": "हर किसी के दो चेहरे होते हैं. जिसे देखने के लिए तैयार हो, उसे चुनो.",
@@ -10,7 +10,8 @@
   "toggle": {
     "personaSwitchNotice": "तुमने पहले {persona} चुना था. जब तैयार हो तब वापस आना.",
     "language": "भाषा",
-    "persona": "पर्सोना"
+    "persona": "पर्सोना",
+    "personaBlocked": "डेस्कटॉप से ही संभव"
   },
   "mobileGate": {
     "devTitle": "द क्लस्टर",
@@ -36,10 +37,13 @@
     "title": "शोज़",
     "past": "पिछले",
     "upcoming": "आगामी",
+    "voteTitle": "अगले शहर के लिए वोट करें",
+    "checkItOut": "देखो!",
     "venueTbd": "स्थान तय नहीं",
     "dateTbd": "2027 — तारीख तय नहीं",
     "mapView": "मैप",
-    "listView": "सूची"
+    "listView": "सूची",
+    "backToDesktop": "वापस"
   },
   "team": {
     "title": "टीम"

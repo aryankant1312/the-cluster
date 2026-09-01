@@ -1,0 +1,8 @@
+/* hero-03 — section-private CSS (from globals.css) */
+
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&display=swap");
+
+@theme {
+  --font-instrument-serif: "Instrument Serif", Inter, ui-sans-serif, sans-serif;
+  --font-tight: "Inter Tight", Inter, ui-sans-serif, sans-serif;
+}

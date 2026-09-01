@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -66,9 +67,38 @@ export function PersonaProvider({
     setHydrated(true);
   }, []);
 
+  /**
+   * WHAT THE SERVER ALREADY BELIEVES, so a write that changes nothing is never
+   * sent. Seeded from the props, which came from the cookies themselves.
+   *
+   * THIS IS WHY THE PLAY BUTTON DIED ON SOME LOADS. These two effects used to
+   * call their server actions on *every* mount, including the overwhelmingly
+   * common case where the cookie already held exactly the value being written.
+   * A Server Action is not a fetch: Next answers it with a fresh RSC payload
+   * for the current route and the router applies it, so each of these was a
+   * silent refresh of the page the visitor was looking at. Two fired together,
+   * a tick after hydration — verified against the running server, which logged
+   * `POST /enter` twice on every single load of the landing page.
+   *
+   * A `router.push` issued while one is in flight goes nowhere: the refresh
+   * lands afterwards, re-renders the tree at the URL it was started for, and
+   * takes the pending navigation with it. The landing page's only control is a
+   * `router.push("/choose-face")`, so whether it worked came down to whether
+   * the click fell inside that window — which is the "works, then doesn't,
+   * then works" the button was reported for. Nothing was wrong with the
+   * button. It was being talked over.
+   *
+   * Refs rather than state: nothing renders from these, and a state update
+   * here would be a render whose only job is to remember a write.
+   */
+  const writtenPersona = useRef<Persona | null>(initialPersona);
+  const writtenLocale = useRef<Locale>(initialLocale);
+
   useEffect(() => {
     document.documentElement.setAttribute("data-persona", persona);
     if (!hydrated) return;
+    if (writtenPersona.current === persona) return;
+    writtenPersona.current = persona;
     const timer = setTimeout(() => void setPersonaCookie(persona), 0);
     return () => clearTimeout(timer);
   }, [persona, hydrated]);
@@ -76,6 +106,8 @@ export function PersonaProvider({
   useEffect(() => {
     document.documentElement.setAttribute("lang", locale);
     if (!hydrated) return;
+    if (writtenLocale.current === locale) return;
+    writtenLocale.current = locale;
     const timer = setTimeout(() => void setLocaleCookie(locale), 0);
     return () => clearTimeout(timer);
   }, [locale, hydrated]);

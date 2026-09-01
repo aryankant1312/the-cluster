@@ -1,6 +1,6 @@
 {
   "enter": {
-    "proceed": "[proceed]"
+    "proceed": "Proceed"
   },
   "chooseFace": {
     "line": "EVERYONE HAS TWO FACES. CHOOSE THE ONE YOU'RE READY TO SEE.",
@@ -10,7 +10,8 @@
   "toggle": {
     "personaSwitchNotice": "YOU CHOSE {persona} FIRST. COME BACK WHEN YOU'RE READY.",
     "language": "Language",
-    "persona": "Persona"
+    "persona": "Persona",
+    "personaBlocked": "Possible from desktop"
   },
   "mobileGate": {
     "devTitle": "THE CLUSTER",
@@ -36,10 +37,13 @@
     "title": "SHOWS",
     "past": "PAST",
     "upcoming": "UPCOMING",
+    "voteTitle": "Vote for the next city",
+    "checkItOut": "Check it out!",
     "venueTbd": "VENUE TBD",
     "dateTbd": "2027 — DATE TBD",
     "mapView": "MAP",
-    "listView": "LIST"
+    "listView": "LIST",
+    "backToDesktop": "Back"
   },
   "team": {
     "title": "TEAM"

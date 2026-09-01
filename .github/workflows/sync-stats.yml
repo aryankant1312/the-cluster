@@ -1,0 +1,72 @@
+# The only writer of platform figures.
+#
+# Runs here rather than on Vercel for three reasons: Hobby clamps function
+# duration well below what a browser-driven scrape needs, Playwright cannot run
+# in a Next.js serverless function at all, and Vercel's IP ranges are among the
+# most aggressively blocked by Instagram. Runners also give a free Chromium and
+# free retries.
+#
+# The website never runs any of this. It reads the rows this job writes, so a
+# scrape that is slow, blocked or broken can never delay a page load — the site
+# keeps serving the last good number.
+
+name: Sync platform stats
+
+on:
+  schedule:
+    # 21:30 UTC = 03:00 IST, every second day. Note GitHub reads */2 as days
+    # 1,3,5..31, so the turn of a month can put two runs one day apart. That is
+    # harmless: every write is an upsert keyed by day.
+    - cron: "30 21 */2 * *"
+  # The "Run workflow" button. This is the refresh control /admin links out to,
+  # and the way to seed a fresh database without waiting for the schedule.
+  workflow_dispatch:
+
+# Two runs writing the same rows at once would be pointless rather than
+# dangerous — every write is an upsert — but there is no reason to pay for it.
+concurrency:
+  group: sync-stats
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # `pg` is a real dependency of the app, so it comes from the lockfile.
+      - name: Install dependencies
+        run: npm ci
+
+      # Playwright is deliberately NOT in package.json: it is needed only by
+      # this job, and adding it would ship a browser-automation library into
+      # the Vercel build for no reason. --no-save keeps the lockfile clean.
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1
+          npx playwright install --with-deps chromium
+
+      # One retry, five minutes later, in the same run. With a two-day cadence
+      # a transient failure would otherwise leave the figures four days stale,
+      # and a retry costs runner minutes only when something actually failed.
+      - name: Sync
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          SPOTIFY_ARTIST_ID: ${{ secrets.SPOTIFY_ARTIST_ID }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CHANNEL_ID: ${{ secrets.YOUTUBE_CHANNEL_ID }}
+          INSTAGRAM_HANDLE: ${{ secrets.INSTAGRAM_HANDLE }}
+        run: |
+          node scripts/sync-stats.mjs || {
+            echo "::warning::First attempt failed. Retrying in 5 minutes."
+            sleep 300
+            node scripts/sync-stats.mjs
+          }
