@@ -215,20 +215,67 @@ async function collectInstagram() {
   if (!res?.ok) throw new Error(`Instagram returned ${res?.status ?? "no response"}`);
   const html = await res.text();
 
-  const match = html.match(/([\d.,]+[KMB]?)\s+Followers/i);
-  const value = match ? parseCompactNumber(match[1]) : null;
+  // Entities and non-breaking spaces are the reason a parser that works from
+  // one machine fails from another: the same page can arrive as
+  // `18K&nbsp;Followers`, which no amount of `\s+` will match.
+  const text = html
+    .replace(/&nbsp;|&#160;|&#xa0;/gi, " ")
+    .replace(/ /g, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"');
+
+  // Most exact first. `edge_followed_by` is the real count, not the rounded
+  // one, and appears in the embedded JSON when Instagram includes it.
+  const exact = text.match(/"edge_followed_by"\s*:\s*\{\s*"count"\s*:\s*(\d+)/);
+  if (exact) {
+    return {
+      values: [
+        { source: "instagram", metric: "followers", key: "instagram_followers", value: Number(exact[1]) },
+      ],
+      note: "exact, from embedded JSON",
+    };
+  }
+
+  const followerCount = text.match(/"follower_count"\s*:\s*(\d+)/);
+  if (followerCount) {
+    return {
+      values: [
+        {
+          source: "instagram",
+          metric: "followers",
+          key: "instagram_followers",
+          value: Number(followerCount[1]),
+        },
+      ],
+      note: "exact, from embedded JSON",
+    };
+  }
+
+  // Then the rounded figure, wherever it appears — the meta description is
+  // where it usually is, but not always.
+  const rounded =
+    text.match(/content="([\d.,]+\s*[KMB]?)\s*Followers/i) ??
+    text.match(/([\d.,]+\s*[KMB]?)\s*Followers/i);
+  const value = rounded ? parseCompactNumber(rounded[1].replace(/\s+/g, "")) : null;
 
   if (value === null) {
+    // Say what actually arrived. A scraper that fails without describing the
+    // page it failed on makes every future run a guess.
+    const title = text.match(/<title[^>]*>([^<]{0,120})/i)?.[1]?.trim() ?? "(none)";
+    const sawWord = /followers/i.test(text);
+    const sawLogin = /loginForm|Log in to Instagram|accounts\/login/i.test(text);
     throw new Error(
-      /loginForm|Log in to Instagram/i.test(html)
-        ? "Instagram served a login wall — the crawler user-agent no longer works"
-        : "Instagram page fetched but no follower count found — the markup has changed",
+      `Instagram returned ${res.status}, ${html.length} bytes, title "${title}". ` +
+        `Contains the word "followers": ${sawWord}. Looks like a login wall: ${sawLogin}. ` +
+        (sawLogin
+          ? "The crawler user-agent no longer gets the public page."
+          : "The page came through but the count could not be parsed from it."),
     );
   }
 
   return {
     values: [{ source: "instagram", metric: "followers", key: "instagram_followers", value }],
-    note: `rounded as published ("${match[1]}")`,
+    note: `rounded as published ("${rounded[1].trim()}")`,
   };
 }
 
