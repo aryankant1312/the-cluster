@@ -78,18 +78,28 @@ function parseCompactNumber(raw) {
   return Math.round(n * mult);
 }
 
-async function politeFetch(url, init = {}, attempts = 3) {
+/**
+ * Fetch that honours a 429 rather than hammering through it.
+ *
+ * `baseMs` sets how patient the backoff is, because the endpoints are not
+ * alike: an API returning 429 usually means "you were briefly too quick", but
+ * Instagram returning 429 means "this IP is throttled", and a one-second
+ * retry against that is just a second request into the same wall.
+ */
+async function politeFetch(url, init = {}, { attempts = 3, baseMs = 1000 } = {}) {
   for (let i = 0; i < attempts; i++) {
     try {
       const res = await fetch(url, init);
       if (res.status !== 429) return res;
+      // Retry-After is authoritative when present, and is in seconds.
       const retryAfter = Number(res.headers.get("retry-after"));
-      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** i * 1000;
+      const waitMs =
+        Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** i * baseMs;
       if (i === attempts - 1) return res;
-      await new Promise((r) => setTimeout(r, Math.min(30_000, waitMs)));
+      await new Promise((r) => setTimeout(r, Math.min(90_000, waitMs)));
     } catch {
       if (i === attempts - 1) return null;
-      await new Promise((r) => setTimeout(r, 2 ** i * 1000));
+      await new Promise((r) => setTimeout(r, 2 ** i * baseMs));
     }
   }
   return null;
@@ -186,9 +196,22 @@ async function collectSpotifyApi() {
  * anonymous access can see.
  */
 async function collectInstagram() {
-  const res = await politeFetch(`https://www.instagram.com/${INSTAGRAM_HANDLE}/`, {
-    headers: { "User-Agent": CRAWLER_UA, "Accept-Language": "en-US,en;q=0.9" },
-  });
+  // Four attempts backing off 15s, 30s, 60s — about two minutes of patience.
+  // Instagram throttles datacenter ranges hard, and GitHub's runners live in
+  // one, so a 429 here is the expected failure rather than a surprise.
+  const res = await politeFetch(
+    `https://www.instagram.com/${INSTAGRAM_HANDLE}/`,
+    { headers: { "User-Agent": CRAWLER_UA, "Accept-Language": "en-US,en;q=0.9" } },
+    { attempts: 4, baseMs: 15_000 },
+  );
+
+  if (res?.status === 429) {
+    throw new Error(
+      "Instagram rate-limited the runner (429) after four attempts. This IP range is " +
+        "throttled, not briefly busy — the last known follower count stays on the site, " +
+        "and an exact figure can be entered as an override in /admin.",
+    );
+  }
   if (!res?.ok) throw new Error(`Instagram returned ${res?.status ?? "no response"}`);
   const html = await res.text();
 

@@ -66,9 +66,14 @@ jobs:
           npm install --no-save playwright@1
           npx playwright install --with-deps chromium
 
-      # One retry, five minutes later, in the same run. With a two-day cadence
-      # a transient failure would otherwise leave the figures four days stale,
-      # and a retry costs runner minutes only when something actually failed.
+      # One retry, a minute later. It was five minutes, which is dead time in
+      # every failed run and buys nothing that a minute does not: the failure
+      # this actually sees is Instagram rate-limiting the runner's IP, and an
+      # IP that is throttled at T is throttled at T+5min too. The collector
+      # itself now backs off across a couple of minutes before giving up, so
+      # this outer retry only covers a whole-script fault.
+      #
+      # A retry costs runner minutes only when something has already failed.
       - name: Sync
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -80,7 +85,7 @@ jobs:
           INSTAGRAM_HANDLE: ${{ secrets.INSTAGRAM_HANDLE }}
         run: |
           node scripts/sync-stats.mjs || {
-            echo "::warning::First attempt failed. Retrying in 5 minutes."
-            sleep 300
+            echo "::warning::First attempt failed. Retrying in 60 seconds."
+            sleep 60
             node scripts/sync-stats.mjs
           }
