@@ -6,6 +6,18 @@ import { cn } from "@/lib/utils";
 
 type SubscribeStatus = "idle" | "loading" | "done";
 
+/**
+ * What keeps black type readable over an ungraded photograph.
+ *
+ * Two stacked white shadows at zero offset — a tight one that fattens the
+ * glyph edge and a wider one that lifts the few pixels beyond it. The result
+ * is local: it raises the value immediately around each letter and leaves the
+ * rest of the frame exactly as shot, which is the whole point. A scrim would
+ * have been one line of CSS and would have darkened the picture.
+ */
+const TYPE_HALO =
+  "0 0 3px rgba(255,255,255,0.95), 0 0 10px rgba(255,255,255,0.75), 0 1px 2px rgba(255,255,255,0.9)";
+
 function LoaderDots() {
   return (
     <span className="flex items-center gap-1" aria-hidden="true">
@@ -58,62 +70,74 @@ export function ContactWindow({ onBook }: { onBook?: () => void }) {
     // Reading surface. See `.long-text` in globals.css.
     <div className="long-text -m-3 grid h-[calc(100%+1.5rem)] w-[calc(100%+1.5rem)] grid-cols-1 md:grid-cols-2">
       {/*
-        THE LEFT HALF IS THE PHOTOGRAPH, and every colour in it is taken from
-        the photograph rather than from the persona's light-blue window.
+        THE LEFT HALF IS THE PHOTOGRAPH, UNGRADED.
 
-        The picture is near-black and faintly warm — its median pixel is
-        #130d0d and its highlights land around #bab3b2 — so the grade over it is
-        that same warm near-black, the rule under the heading is that highlight,
-        and the type is white rather than the black it is everywhere else in
-        this window. Navy on this would be invisible; black on it would be gone.
+        It used to be a near-black portrait under a heavy warm-black wash, with
+        white type laid over it. Both are gone. The picture is now the riverbed
+        frame, which is bright end to end — cloud at the top, pale stone at the
+        bottom — and it carries the panel on its own. Nothing is laid over it:
+        what is on screen is the frame as shot.
 
-        `object-position` is pulled above centre: the frame is square, this
-        column is a wide letterbox, and a centred crop takes a band across the
-        hands. Thirty-two percent down keeps both faces — the painted one and
-        the real one — inside the crop at every window size.
+        WHICH IS WHY THE TYPE IS BLACK, not white and not the window's navy.
+        Against a photograph this light, white has nothing to sit against;
+        black is the only value with room to spare across cloud, stone and
+        water alike.
+
+        THE HALO IS NOT A SCRIM. Each line carries a soft white text-shadow: it
+        lightens the two or three pixels immediately around a glyph and touches
+        nothing else, so the mid-tone band of forest across the middle of the
+        frame cannot swallow a row. Dimming the whole picture to buy the same
+        legibility is precisely what this panel has stopped doing.
+
+        `object-position` is 50% / 58%. The frame is 16:9 and this column is
+        nearer 5:4, so the crop runs vertically; pulling it below centre trades
+        a little sky for more of the pale riverbed, which is the half the lower
+        rows are written over.
       */}
       <section className="relative flex min-w-0 flex-col overflow-hidden p-6 md:p-8">
         <Image
-          src="/images/dev/contact-photo.jpg"
+          src="/images/dev/contact-photo-new.jpg"
           alt=""
           aria-hidden="true"
           fill
           priority
           sizes="(min-width: 768px) 38vw, 100vw"
           className="object-cover"
-          style={{ objectPosition: "50% 32%" }}
+          style={{ objectPosition: "50% 50%" }}
         />
 
-        {/* The grade. Heaviest where the type starts and lightest at the far
-            edge, so the picture stays legible where nothing is written over it. */}
+        {/* A hairline along the seam, and nothing else. The cast shadow that
+            used to sit here went with the grade — it was a shade over the
+            picture, and the picture is no longer something to shade. */}
         <div
           aria-hidden="true"
           className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(100deg, rgba(8,5,5,0.90) 0%, rgba(12,8,8,0.76) 46%, rgba(22,16,16,0.52) 100%)",
-          }}
+          style={{ boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.16)" }}
         />
-        {/* And a shade along the seam, so the panel reads as recessed into the
-            window rather than as a rectangle laid on top of it. */}
+
+        {/* The supplied monochrome artwork finishes on a pale grey edge. This
+            short feather carries that value into the adjacent action panel,
+            so the two halves meet as one composition instead of at a hard
+            photo/card seam. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            boxShadow:
-              "inset -14px 0 26px -18px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(186,179,178,0.10)",
-          }}
+          className="pointer-events-none absolute inset-y-0 right-0 w-[18%] bg-gradient-to-r from-transparent to-[#e7e7e5]"
         />
 
         <div className="relative flex min-h-0 flex-1 flex-col">
           {/* Bigger, but lighter. At bold it competed with the values beneath
               it for the same job — this names the column, it is not the content
               of it, and size alone says that clearly enough. */}
-          <h3 className="shrink-0 font-chrome text-lg font-normal tracking-[0.2em] text-white sm:text-xl">
+          <h3
+            className="shrink-0 font-chrome text-lg font-normal tracking-[0.2em] text-black sm:text-xl"
+            style={{ textShadow: TYPE_HALO }}
+          >
             GET IN TOUCH
           </h3>
-          {/* The photograph's own highlight, not the persona's navy. */}
-          <div aria-hidden="true" className="mt-2 h-[3px] w-14 shrink-0 bg-[#bab3b2]" />
+          {/* Black, like the type it underlines — the photograph's old
+              highlight grey was picked to read against a near-black grade that
+              no longer exists. */}
+          <div aria-hidden="true" className="mt-2 h-[3px] w-14 shrink-0 bg-black" />
 
           {/* `justify-around` in a full-height column, so the rows use the
               space the window actually has instead of bunching at the top and
@@ -135,7 +159,7 @@ export function ContactWindow({ onBook }: { onBook?: () => void }) {
 
       {/* No dividing rule any more: the dark panel's own edge is the divider,
           and a hairline beside it would only draw a second one. */}
-      <section className="flex min-w-0 flex-col gap-5 p-6 md:p-8">
+      <section className="flex min-w-0 flex-col gap-5 bg-[#e7e7e5] p-6 md:p-8">
         {/* Booking is a different job from a general hello, so it gets its own
             door rather than being buried in a free-text message. It takes the
             larger share of the column — a thin bar floating in a tall empty
@@ -149,8 +173,10 @@ export function ContactWindow({ onBook }: { onBook?: () => void }) {
             // importance the two actually have.
             className="win98-border win98-press flex min-h-0 w-full flex-[1.6] flex-col items-center justify-center gap-2 bg-persona-surface px-4 font-chrome text-black hover:bg-persona-surface-alt active:translate-y-px"
           >
+            {/* Title Case, matching the window this door opens — see the note
+                on casing in `BookDotm`. */}
             <span className="text-2xl font-black tracking-[0.16em] sm:text-3xl">
-              BOOK DOTM →
+              Book DOTM →
             </span>
             {/* Raised with it. Left at 11px under type this size it stopped
                 reading as the button's own subtitle and started reading as
@@ -229,24 +255,29 @@ function ContactRow({
     <div className="min-w-0">
       {/* `uppercase` does the casing here, so a caller passing "Mail" and one
           passing "MAIL" render identically and the row cannot drift. */}
-      {/* White, not navy. This row now sits on a near-black photograph rather
-          than on the window's light blue, and #0a2f5c on that is a hair over
-          1:1 — legible nowhere. 60% white lands around 8:1 against the graded
-          plate, which leaves the label plainly secondary to the value without
-          dropping it out of sight. */}
-      <dt className="font-chrome text-[11px] font-normal uppercase tracking-[0.24em] text-white/60">
+      {/* Black at 70%, not white and not navy. The panel behind this is a
+          bright photograph now — see the note on the section above — and the
+          label stays plainly secondary to the value by being a shade lighter
+          than it rather than by being a different colour. */}
+      <dt
+        className="font-chrome text-[11px] font-normal uppercase tracking-[0.24em] text-black/70"
+        style={{ textShadow: TYPE_HALO }}
+      >
         {label}
       </dt>
       <dd className="mt-1 min-w-0">
         {/* Up a step in size and down to normal weight. Two rows of bold at
             this size read as shouting, and with only two rows left there is
             room to set them larger without the column running long.
-            The underline takes the photograph's own highlight; hovering warms
-            it rather than colouring it, which is all the picture will carry. */}
+            Black on the ungraded photograph, underlined in the same black at
+            60% so the rule reads as attached to the type rather than as a
+            second line under it. Hover closes that gap to full black — the
+            only state change the picture will carry without a colour fight. */}
         <a
           href={href}
           {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-          className="block truncate font-chrome text-xl font-normal tracking-tight text-white underline decoration-[#bab3b2] decoration-2 underline-offset-[5px] transition-colors hover:text-[#e8dfd9] hover:decoration-white sm:text-2xl"
+          className="block truncate font-chrome text-xl font-normal tracking-tight text-black underline decoration-black/60 decoration-2 underline-offset-[5px] transition-colors hover:decoration-black sm:text-2xl"
+          style={{ textShadow: TYPE_HALO }}
         >
           {value}
         </a>

@@ -242,7 +242,10 @@ function VoteCount({ votes, className }: { votes: number; className?: string }) 
    * the lint rule against setState-in-an-effect does not apply here.
    */
   const [primed, setPrimed] = useState(false);
-  if (!primed) setPrimed(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setPrimed(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const shown = useCountTo(primed ? votes : 0) ?? 0;
 
@@ -900,22 +903,12 @@ export function ShowsExperience() {
             )}
           >
             NEXT CITY
-            {/* Nudge: a live dot plus a one-line hint, only while unseen. */}
+            {/* Nudge: keep the live dot, without the overlapping badge. */}
             {!voteSeen && view !== "vote" && (
-              <>
-                <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-persona-accent opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-persona-accent" />
-                </span>
-                <motion.span
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.2 }}
-                  className="pointer-events-none absolute right-0 top-full z-10 mt-2 whitespace-nowrap rounded-full bg-persona-accent px-2.5 py-1 font-chrome text-[9px] tracking-widest text-white shadow-lg"
-                >
-                  YOUR CITY NEXT?
-                </motion.span>
-              </>
+              <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-persona-accent opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-persona-accent" />
+              </span>
             )}
           </button>
         </div>

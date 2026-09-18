@@ -13,8 +13,11 @@ export function useRotatingCopy(pool: LocalizedString[]): LocalizedString {
   const [line, setLine] = useState<LocalizedString>(pool[0]);
 
   useEffect(() => {
-    const index = Math.floor(Math.random() * pool.length);
-    setLine(pool[index] ?? pool[0]);
+    const timer = setTimeout(() => {
+      const index = Math.floor(Math.random() * pool.length);
+      setLine(pool[index] ?? pool[0]);
+    }, 0);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

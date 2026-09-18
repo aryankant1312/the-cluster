@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useDragControls } from "framer-motion";
 import { desktopDragBounds } from "@/components/window-manager/window-geometry";
 import type { StickyNote } from "./window-content/NotesApp";
@@ -20,10 +20,23 @@ import type { StickyNote } from "./window-content/NotesApp";
  * whole card, which leaves the note's text selectable and keeps the resize
  * corner from being swallowed by the drag gesture.
  */
-export function StickyNoteCard({ note }: { note: StickyNote }) {
+export function StickyNoteCard({
+  note,
+  onDismiss,
+}: {
+  note: StickyNote;
+  onDismiss?: (id: string) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const controls = useDragControls();
   const [bounds, setBounds] = useState<ReturnType<typeof desktopDragBounds>>(undefined);
+
+  useEffect(() => {
+    const measure = () => setBounds(desktopDragBounds(ref.current));
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   return (
     <motion.div
@@ -62,9 +75,28 @@ export function StickyNoteCard({ note }: { note: StickyNote }) {
         <span className="font-chrome text-[9px] uppercase tracking-[0.2em] text-black/50">
           Note
         </span>
-        <span aria-hidden="true" className="text-[10px] leading-none text-black/30">
-          ⠿
-        </span>
+        <div
+          className="flex items-center gap-1.5"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <span aria-hidden="true" className="text-[10px] leading-none text-black/30">
+            ⠿
+          </span>
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss(note.id);
+              }}
+              aria-label="Delete note"
+              title="Delete note"
+              className="flex h-4 w-4 items-center justify-center rounded text-black/40 hover:bg-black/10 hover:text-black focus:outline-none text-[11px] leading-none"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="whitespace-pre-wrap break-words p-3 text-xs leading-relaxed">

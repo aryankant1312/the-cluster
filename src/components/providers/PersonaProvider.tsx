@@ -49,22 +49,25 @@ export function PersonaProvider({
   const [justSwitched, setJustSwitched] = useState<Persona | null>(null);
 
   useEffect(() => {
-    const storedFirstChoice = window.localStorage.getItem(FIRST_CHOICE_KEY) as Persona | null;
-    const storedCurrent = window.localStorage.getItem(CURRENT_PERSONA_KEY) as Persona | null;
-    const storedLocale = window.localStorage.getItem(LOCALE_KEY) as Locale | null;
+    const timer = setTimeout(() => {
+      const storedFirstChoice = window.localStorage.getItem(FIRST_CHOICE_KEY) as Persona | null;
+      const storedCurrent = window.localStorage.getItem(CURRENT_PERSONA_KEY) as Persona | null;
+      const storedLocale = window.localStorage.getItem(LOCALE_KEY) as Locale | null;
 
-    if (storedFirstChoice === "dev" || storedFirstChoice === "dotm") {
-      setFirstChoiceState(storedFirstChoice);
-    }
-    if (storedCurrent === "dev" || storedCurrent === "dotm") {
-      setPersonaState(storedCurrent);
-    } else if (storedFirstChoice === "dev" || storedFirstChoice === "dotm") {
-      setPersonaState(storedFirstChoice);
-    }
-    if (storedLocale === "en" || storedLocale === "hi") {
-      setLocaleState(storedLocale);
-    }
-    setHydrated(true);
+      if (storedFirstChoice === "dev" || storedFirstChoice === "dotm") {
+        setFirstChoiceState(storedFirstChoice);
+      }
+      if (storedCurrent === "dev" || storedCurrent === "dotm") {
+        setPersonaState(storedCurrent);
+      } else if (storedFirstChoice === "dev" || storedFirstChoice === "dotm") {
+        setPersonaState(storedFirstChoice);
+      }
+      if (storedLocale === "en" || storedLocale === "hi") {
+        setLocaleState(storedLocale);
+      }
+      setHydrated(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   /**

@@ -213,6 +213,8 @@ export default function CircleImage({
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const angle = useMotionValue(0);
+  // Framer Motion exposes several animation control shapes through overloads.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const animationRef = useRef<any>(null);
 
   const draggingRef = useRef(false);
@@ -283,6 +285,7 @@ export default function CircleImage({
     animationRef.current = animate(
       angle,
       angle.get() + Math.PI * 2 * sign,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { ...live.transition, repeat: Infinity } as any
     );
   };
@@ -321,6 +324,7 @@ export default function CircleImage({
         timeConstant: 700,
         restDelta: 0.01,
         onComplete: spin,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
     } else {
       spin();
@@ -402,9 +406,7 @@ export default function CircleImage({
     placeRef.current = place;
     easeRef.current = easeTransforms;
     place(angle.get());
-    const unsubscribe = angle.on
-      ? angle.on("change", place)
-      : (angle as any).onChange(place);
+    const unsubscribe = angle.on("change", place);
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geometry, cards.length]);

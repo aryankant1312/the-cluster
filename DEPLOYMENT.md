@@ -102,7 +102,6 @@ _Production_ and _Preview_.
 | `COOKIE_SECRET` | long random string | **Yes** — see below |
 | `GOOGLE_CLIENT_ID` | OAuth client id | **Yes** — see below |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret | **Yes** — see below |
-| `GOOGLE_REDIRECT_URI` | leave unset unless behind a rewriting proxy | optional |
 | `OTP_FROM_EMAIL` | sender for one-time codes | optional |
 | `AUTH_DEMO_MODE` | leave **unset** | never set on the real site |
 

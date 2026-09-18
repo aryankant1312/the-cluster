@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePersona } from "@/components/providers/PersonaProvider";
 import { useWindowManager } from "@/components/window-manager/window-manager-context";
@@ -166,7 +166,11 @@ export function BookDotm() {
           type="button"
           onClick={backToContact}
           className={cn(
-            "absolute left-5 top-5 inline-flex items-center gap-1.5 font-chrome uppercase tracking-[0.14em]",
+            // TITLE CASE THROUGHOUT THIS WINDOW, which is why every `uppercase`
+            // that used to be in these class lists has gone. The tracking
+            // stays: it was put there to open up caps, and it does the same job
+            // for a mixed-case chrome face, which sets tight without it.
+            "absolute left-5 top-5 inline-flex items-center gap-1.5 font-chrome tracking-[0.14em]",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
             isDotm
               ? "rounded-full border border-white/20 px-3 py-1.5 text-[11px] text-white/70 transition-colors hover:border-white/40 hover:text-white focus-visible:ring-white focus-visible:ring-offset-[#0b0b0c]"
@@ -179,7 +183,7 @@ export function BookDotm() {
 
         <h2
           className={cn(
-            "font-chrome uppercase tracking-[0.2em]",
+            "font-chrome tracking-[0.2em]",
             isDotm ? "text-2xl" : "text-xl",
           )}
         >
@@ -201,7 +205,7 @@ export function BookDotm() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.18 }}
             >
-              <Legend isDotm={isDotm}>What are you looking for?</Legend>
+              <Legend isDotm={isDotm}>What Are You Looking For?</Legend>
               <p
                 className={cn(
                   "mt-2 font-body text-sm",
@@ -300,7 +304,7 @@ export function BookDotm() {
                 {shows("eventType") && (
                   <Text
                     id="event_type"
-                    label="Event type"
+                    label="Event Type"
                     value={values.event_type}
                     onChange={(v) => set("event_type", v)}
                     isDotm={isDotm}
@@ -310,7 +314,7 @@ export function BookDotm() {
                 {shows("audience") && (
                   <Select
                     id="expected_audience"
-                    label="Expected audience"
+                    label="Expected Audience"
                     value={values.expected_audience}
                     onChange={(v) => set("expected_audience", v)}
                     options={AUDIENCE_OPTIONS}
@@ -321,7 +325,7 @@ export function BookDotm() {
                 {shows("budget") && (
                   <Select
                     id="budget_range"
-                    label="Budget range"
+                    label="Budget Range"
                     value={values.budget_range}
                     onChange={(v) => set("budget_range", v)}
                     options={BUDGET_OPTIONS}
@@ -334,7 +338,7 @@ export function BookDotm() {
               <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Text
                   id="contact_name"
-                  label="Your name"
+                  label="Your Name"
                   required
                   autoComplete="name"
                   value={values.contact_name}
@@ -370,7 +374,7 @@ export function BookDotm() {
               <div className="mt-4">
                 <Field
                   id="message"
-                  label="Anything else"
+                  label="Anything Else"
                   isDotm={isDotm}
                   hint={FIELD_HINTS.message}
                 >
@@ -395,13 +399,13 @@ export function BookDotm() {
                 type="submit"
                 disabled={sending}
                 className={cn(
-                  "mt-6 w-full py-3 font-chrome text-sm uppercase tracking-[0.2em] transition disabled:opacity-50",
+                  "mt-6 w-full py-3 font-chrome text-sm tracking-[0.2em] transition disabled:opacity-50",
                   isDotm
                     ? "rounded-lg bg-[#ff0033] text-white hover:bg-[#d4002b]"
                     : "win98-border win98-press bg-persona-surface text-black",
                 )}
               >
-                {sending ? "Sending…" : "Send request"}
+                {sending ? "Sending…" : "Send Request"}
               </button>
 
               {/* Says what happens next. "Send" on its own leaves people
@@ -429,11 +433,11 @@ export function BookDotm() {
             >
               <p
                 className={cn(
-                  "font-chrome text-xl uppercase tracking-[0.2em]",
+                  "font-chrome text-xl tracking-[0.2em]",
                   isDotm && "text-[#ff0033]",
                 )}
               >
-                Request received
+                Request Received
               </p>
               <p
                 className={cn(
@@ -467,7 +471,7 @@ export function BookDotm() {
                   isDotm ? "text-white/70 hover:text-white" : "text-black/70 hover:text-black",
                 )}
               >
-                Send another
+                Send Another
               </button>
             </motion.div>
           )}
@@ -515,7 +519,7 @@ function Legend({ children, isDotm }: { children: React.ReactNode; isDotm: boole
   return (
     <p
       className={cn(
-        "font-chrome text-sm uppercase tracking-[0.2em]",
+        "font-chrome text-sm tracking-[0.2em]",
         isDotm ? "text-white/70" : "text-black/70",
       )}
     >
@@ -546,7 +550,7 @@ function Field({
       <label
         htmlFor={id}
         className={cn(
-          "mb-1 block font-chrome text-[11px] uppercase tracking-[0.18em]",
+          "mb-1 block font-chrome text-[11px] tracking-[0.18em]",
           isDotm ? "text-white/55" : "text-black/60",
         )}
       >
@@ -596,17 +600,27 @@ function Text({
   required?: boolean;
   autoComplete?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const openDatePicker = () => {
+    if (type !== "date") return;
+    inputRef.current?.focus();
+    inputRef.current?.showPicker?.();
+  };
+
   return (
     <Field id={id} label={label} hint={hint} error={error} required={required} isDotm={isDotm}>
       <input
+        ref={inputRef}
         id={id}
         type={type}
         value={value}
         required={required}
         autoComplete={autoComplete}
         aria-invalid={error ? true : undefined}
+        onClick={openDatePicker}
         onChange={(e) => onChange(e.target.value)}
-        className={inputClass(isDotm)}
+        className={cn(inputClass(isDotm), isDotm && "dotm-dark-field", type === "date" && "cursor-pointer")}
+        style={isDotm && type === "date" ? { colorScheme: "dark" } : undefined}
       />
     </Field>
   );
@@ -629,17 +643,24 @@ function Select({
   isDotm: boolean;
   hint?: string;
 }) {
+  const optionStyle = isDotm ? "bg-[#18181b] text-white" : "bg-white text-black";
+
   return (
     <Field id={id} label={label} isDotm={isDotm} hint={hint}>
       <select
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={inputClass(isDotm)}
+        className={cn(
+          inputClass(isDotm),
+          isDotm ? "[&>option]:bg-[#18181b] [&>option]:text-white" : "[&>option]:bg-white [&>option]:text-black"
+        )}
       >
-        <option value="">Select…</option>
+        <option value="" className={optionStyle}>
+          Select…
+        </option>
         {options.map((o) => (
-          <option key={o} value={o}>
+          <option key={o} value={o} className={optionStyle}>
             {o}
           </option>
         ))}

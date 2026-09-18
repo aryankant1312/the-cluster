@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { WindowManagerProvider } from "@/components/window-manager/window-manager-context";
 import { Taskbar } from "@/components/dev/Taskbar";
+import { PersonaTopBar } from "@/components/chrome/PersonaTopBar";
 import { currentUser } from "@/lib/auth";
 
 /** The authoritative gate. See the matching note on the DOTM layout. */
@@ -10,6 +11,7 @@ export default async function DevLayout({ children }: { children: React.ReactNod
 
   return (
     <WindowManagerProvider>
+      <PersonaTopBar />
       <div className="relative flex-1 overflow-hidden pb-10">{children}</div>
       <Taskbar />
     </WindowManagerProvider>

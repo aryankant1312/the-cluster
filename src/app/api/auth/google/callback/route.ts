@@ -72,6 +72,7 @@ export async function GET(request: Request) {
     const back = new URL(next, url.origin);
     back.searchParams.set("auth_error", reason);
     const response = NextResponse.redirect(back);
+    response.cookies.delete("cluster_oauth_remember");
     response.cookies.delete(GOOGLE_STATE_COOKIE);
     response.cookies.delete(GOOGLE_NEXT_COOKIE);
     response.cookies.delete(GOOGLE_PERSONA_COOKIE);
@@ -108,10 +109,14 @@ export async function GET(request: Request) {
     const cookie = await createSession(user.id, persona, {
       userAgent: request.headers.get("user-agent") ?? "",
       ipHash: requesterHash(request),
+      remember: readCookie(request, "cluster_oauth_remember") === "1",
     });
 
     const response = NextResponse.redirect(new URL(next, url.origin));
     response.cookies.set(cookie.name, cookie.value, sessionCookieOptions(cookie.maxAge));
+    response.cookies.set("cluster_session_dev", "", sessionCookieOptions(0));
+    response.cookies.set("cluster_session_dotm", "", sessionCookieOptions(0));
+    response.cookies.delete("cluster_oauth_remember");
     response.cookies.delete(GOOGLE_STATE_COOKIE);
     response.cookies.delete(GOOGLE_NEXT_COOKIE);
     response.cookies.delete(GOOGLE_PERSONA_COOKIE);

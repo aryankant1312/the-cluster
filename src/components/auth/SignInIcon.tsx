@@ -29,12 +29,14 @@ export function SignInIcon({
   skin,
   onSignedIn,
   nudgeDelayMs = 1500,
+  placement = "corner",
   className,
 }: {
   skin: "dotm" | "dev";
   onSignedIn: () => void;
   /** How long after mounting before the icon starts asking to be pressed. */
   nudgeDelayMs?: number;
+  placement?: "corner" | "inline";
   className?: string;
 }) {
   const isDotm = skin === "dotm";
@@ -43,9 +45,12 @@ export function SignInIcon({
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // DEV's supplied user mark is intentionally stationary. Only DOTM keeps
+    // the delayed attention nudge used by its animated login mark.
+    if (!isDotm) return;
     const timer = setTimeout(() => setNudging(true), nudgeDelayMs);
     return () => clearTimeout(timer);
-  }, [nudgeDelayMs]);
+  }, [isDotm, nudgeDelayMs]);
 
   // Escape closes, and so does a click outside. Both are what a visitor tries
   // first, and a popover that survives them feels stuck rather than firm.
@@ -68,8 +73,14 @@ export function SignInIcon({
   }, [open]);
 
   return (
-    <div ref={wrapRef} className={cn("absolute right-5 top-5 z-40", className)}>
-      <div className="relative flex justify-end">
+    <div
+      ref={wrapRef}
+      className={cn(
+        placement === "inline" ? "relative z-40 mt-4 h-14 w-14 self-center" : "absolute right-5 top-5 z-40",
+        className,
+      )}
+    >
+      <div className={cn("relative flex", placement === "inline" ? "justify-center" : "justify-end")}>
         {/* The ring leaving the icon. Behind the button and
             `pointer-events-none`, so it can never intercept the press it is
             advertising. */}
@@ -90,14 +101,14 @@ export function SignInIcon({
           aria-haspopup="dialog"
           aria-label="Sign in"
           className={cn(
-            "relative flex h-14 w-14 items-center justify-center transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+            "relative flex h-14 w-14 items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
             nudging && !open && "signin-nudge",
             isDotm
-              ? "rounded-full focus-visible:ring-white focus-visible:ring-offset-black"
-              : "focus-visible:ring-[#0a2f5c] focus-visible:ring-offset-[#245edb]",
+              ? "rounded-full transition-transform focus-visible:ring-white focus-visible:ring-offset-black"
+              : "win98-border win98-press bg-persona-surface focus-visible:ring-[#0a2f5c] focus-visible:ring-offset-[#245edb]",
           )}
         >
-          {isDotm ? <DotmLoginMark /> : <DevKeyTile />}
+          {isDotm ? <DotmLoginMark /> : <DevUserIcon />}
         </button>
       </div>
 
@@ -105,7 +116,16 @@ export function SignInIcon({
         <div
           role="dialog"
           aria-label="Sign in"
-          className="absolute right-0 top-[4.25rem] origin-top-right"
+          className={cn(
+            "z-50",
+            placement === "inline"
+              ? cn(
+                  "fixed inset-0 flex items-center justify-center p-3 origin-center",
+                  isDotm ? "bg-black" : "bg-[#3f8cf3]",
+                  "min-[900px]:absolute min-[900px]:bottom-auto min-[900px]:left-[calc(100%+1rem)] min-[900px]:right-auto min-[900px]:top-0 min-[900px]:block min-[900px]:bg-transparent min-[900px]:p-0 min-[900px]:origin-left",
+                )
+              : "absolute right-0 top-[4.25rem] origin-top-right",
+          )}
         >
           <SignInPanel skin={skin} onSignedIn={onSignedIn} />
         </div>
@@ -152,33 +172,19 @@ function DotmLoginMark() {
 }
 
 /**
- * DEV: a Win98 tile with a key on it.
- *
- * Hard-edged bevel, no corner radius, no gradient — the shading is four flat
- * highlight and shadow strokes, which is how that era drew a raised surface
- * and why it still reads as pressable at this size.
+ * DEV: the supplied user mark, kept completely still.
  */
-function DevKeyTile() {
+function DevUserIcon() {
   return (
-    <svg viewBox="0 0 56 56" className="h-full w-full" aria-hidden="true">
-      <rect x="2" y="2" width="52" height="52" fill="#c0c0c0" />
-      {/* Bevel: light from the top-left, shadow to the bottom-right. */}
-      <path d="M2 54V2h52v2H4v50z" fill="#ffffff" />
-      <path d="M54 2v52H2v-2h50V2z" fill="#4a4a4a" />
-      <path d="M5 51V5h46v1H6v45z" fill="#dfdfdf" />
-      <path d="M51 5v46H5v-1h45V5z" fill="#808080" />
-
-      <g
-        fill="none"
-        stroke="#0a2f5c"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="22" cy="24" r="7" />
-        <path d="M27 29l10 10M33 35l3.5 3.5M30 38l3 3" />
-      </g>
-      <circle cx="22" cy="24" r="2.4" fill="#0a2f5c" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/dev/login-user.png"
+      alt=""
+      width={56}
+      height={56}
+      aria-hidden="true"
+      draggable={false}
+      className="h-9 w-9 object-contain"
+    />
   );
 }

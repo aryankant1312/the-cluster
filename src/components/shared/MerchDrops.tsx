@@ -29,13 +29,16 @@ export function MerchDrops() {
 
   // Survive the window being closed and reopened.
   useEffect(() => {
-    try {
-      const raw = window.sessionStorage.getItem(CART_KEY);
-      if (raw) setCart(JSON.parse(raw) as CartLine[]);
-    } catch {
-      /* a corrupt cart is not worth crashing the page over */
-    }
-    setHydrated(true);
+    const timer = setTimeout(() => {
+      try {
+        const raw = window.sessionStorage.getItem(CART_KEY);
+        if (raw) setCart(JSON.parse(raw) as CartLine[]);
+      } catch {
+        /* a corrupt cart is not worth crashing the page over */
+      }
+      setHydrated(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

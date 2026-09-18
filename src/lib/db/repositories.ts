@@ -291,31 +291,16 @@ export const wallTileVotes = {
    */
   async cast(tileId: string, value: 1 | -1, voterHash: string): Promise<1 | -1 | 0> {
     const d = await db();
-    const existing = await d.get<{ id: string; value: number }>(
-      `SELECT id, value FROM wall_tile_votes WHERE tile_id = ? AND voter_hash = ?`,
-      [tileId, voterHash],
+    const row = await d.get<{ value: number }>(
+      `INSERT INTO wall_tile_votes (id, tile_id, value, voter_hash, created_at)
+       VALUES (?,?,?,?,?)
+       ON CONFLICT (tile_id, voter_hash) DO UPDATE
+       SET value = CASE WHEN wall_tile_votes.value = excluded.value THEN 0 ELSE excluded.value END,
+           created_at = excluded.created_at
+       RETURNING value`,
+      [id("wtv"), tileId, value, voterHash, nowIso()],
     );
-
-    if (!existing) {
-      await d.run(
-        `INSERT INTO wall_tile_votes (id, tile_id, value, voter_hash, created_at)
-         VALUES (?,?,?,?,?)`,
-        [id("wtv"), tileId, value, voterHash, nowIso()],
-      );
-      return value;
-    }
-
-    if (existing.value === value) {
-      await d.run(`DELETE FROM wall_tile_votes WHERE id = ?`, [existing.id]);
-      return 0;
-    }
-
-    await d.run(`UPDATE wall_tile_votes SET value = ?, created_at = ? WHERE id = ?`, [
-      value,
-      nowIso(),
-      existing.id,
-    ]);
-    return value;
+    return Number(row!.value) as 1 | -1 | 0;
   },
 
   /**
@@ -328,7 +313,7 @@ export const wallTileVotes = {
   async tally(): Promise<Record<string, WallTileTally>> {
     const d = await db();
     const rows = await d.all<{ tile_id: string; value: number; n: number }>(
-      `SELECT tile_id, value, COUNT(*) AS n FROM wall_tile_votes GROUP BY tile_id, value`,
+      `SELECT tile_id, value, COUNT(*) AS n FROM wall_tile_votes WHERE value <> 0 GROUP BY tile_id, value`,
     );
     const out: Record<string, WallTileTally> = {};
     for (const row of rows) {
@@ -380,7 +365,7 @@ export const wallTileVotes = {
   async mine(voterHash: string): Promise<Record<string, 1 | -1>> {
     const d = await db();
     const rows = await d.all<{ tile_id: string; value: number }>(
-      `SELECT tile_id, value FROM wall_tile_votes WHERE voter_hash = ?`,
+      `SELECT tile_id, value FROM wall_tile_votes WHERE voter_hash = ? AND value <> 0`,
       [voterHash],
     );
     return Object.fromEntries(
@@ -712,7 +697,7 @@ export const authSessions = {
    * code path that ever visits it again, so it is the only chance to tidy up
    * without a scheduled job to do it.
    */
-  async resolve(sessionId: string, persona: "dev" | "dotm"): Promise<User | null> {
+  async resolve(sessionId: string): Promise<User | null> {
     const d = await db();
     const row = await d.get<AuthSession>(`SELECT * FROM auth_sessions WHERE id = ?`, [
       sessionId,
@@ -724,7 +709,7 @@ export const authSessions = {
     }
     // Rows written before the column existed carry "" and match no door, so
     // their holders sign in once more per persona and never again.
-    if (row.persona !== persona) return null;
+    // Persona records the entrance used, not an authorization boundary.
 
     const user = await d.get<User>(`SELECT * FROM users WHERE id = ?`, [row.user_id]);
     return user ?? null;

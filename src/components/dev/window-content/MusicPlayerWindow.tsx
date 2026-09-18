@@ -72,7 +72,10 @@ export function MusicPlayerWindow({
     setDuration(0);
   } else if (index !== prevIndex) {
     setPrevIndex(index);
-    setIsPlaying(false);
+    const nextSrc = getAudioSource(tracks[index]);
+    if (!nextSrc) {
+      setIsPlaying(false);
+    }
     setCurrentTime(0);
     setDuration(0);
   }
@@ -111,12 +114,33 @@ export function MusicPlayerWindow({
     setIndex((nextIndex + tracks.length) % tracks.length);
   };
 
+  const seekToTime = (time: number) => {
+    const audio = audioRef.current;
+    if (!audio || !src) return;
+    const limit = duration || audio.duration || 0;
+    const next = Math.min(limit, Math.max(0, time));
+    if (!Number.isFinite(next)) return;
+    audio.currentTime = next;
+    setCurrentTime(next);
+    setIsPlaying(true);
+    void audio.play().catch(() => undefined);
+  };
+
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    seekToTime(Number(e.target.value));
+  };
+
+  const seekFromPointer = (e: React.PointerEvent<HTMLInputElement>) => {
+    if (!src || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const time = fraction * duration;
     const audio = audioRef.current;
     if (!audio) return;
-    const time = Number(e.target.value);
     audio.currentTime = time;
     setCurrentTime(time);
+    setIsPlaying(true);
+    void audio.play().catch(() => undefined);
   };
 
   const fastForward = () => {
@@ -157,7 +181,7 @@ export function MusicPlayerWindow({
           src={trackArtwork(track)}
           alt={track.title}
           fill
-          className="object-cover"
+          className="object-contain"
           sizes="560px"
         />
 
@@ -197,8 +221,10 @@ export function MusicPlayerWindow({
           type="range"
           min={0}
           max={duration || 0}
+          step="any"
           value={currentTime}
           onChange={seek}
+          onPointerDown={seekFromPointer}
           disabled={!src}
           className="h-4 flex-1 cursor-pointer accent-black disabled:cursor-default disabled:opacity-40"
           aria-label="Seek"

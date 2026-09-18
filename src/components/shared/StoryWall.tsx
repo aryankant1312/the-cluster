@@ -79,6 +79,24 @@ export function StoryWall() {
   const reduceMotion = useReducedMotion();
   const [fullscreen, setFullscreen] = useState<StorySlide | null>(null);
 
+  /**
+   * ONE PIECE PLAYS AT A TIME, and which one is held here rather than in each
+   * card.
+   *
+   * Every card owned its own `playing` flag, so clicking a second one left the
+   * first running: two films and two soundtracks at once, on a wall whose whole
+   * subject is one record. Holding the id centrally means starting one stops
+   * the previous one with no coordination between siblings — the same device
+   * the Cluster Wall already uses to decide which of its tiles may make a
+   * sound.
+   *
+   * Hover previews are deliberately NOT arbitrated by this. They are silent
+   * tastes that end when the pointer leaves, and killing the film somebody
+   * chose because the cursor crossed a neighbour would be a worse fault than
+   * the one this fixes.
+   */
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLOListElement>(null);
   const [offset, setOffset] = useState(0);
@@ -305,7 +323,15 @@ export function StoryWall() {
                 innerRef={(el) => {
                   cardRefs.current[i] = el;
                 }}
-                onOpen={() => setFullscreen(slide)}
+                activeId={playingId}
+                onActivate={setPlayingId}
+                // Opening full screen clears the wall's own claim, so the copy
+                // playing behind the overlay stops rather than doubling the
+                // soundtrack under the one the visitor actually opened.
+                onOpen={() => {
+                  setPlayingId(null);
+                  setFullscreen(slide);
+                }}
               />
               {i < storySlides.length - 1 && (
                 <Connector isDotm={isDotm} revealed={revealed(i + 1)} />
@@ -353,7 +379,13 @@ function Header({ isDotm }: { isDotm: boolean }) {
           "font-headline uppercase leading-[0.92]",
           isDotm
             ? "text-[clamp(1.9rem,4.2vw,3.4rem)] tracking-[0.04em] text-white"
-            : "text-[clamp(2rem,4.6vw,3.8rem)] font-black tracking-tight text-white [text-shadow:4px_4px_0_#0a2f5c]",
+            : // UNBOLDED. DEV's display face ships one weight, so `font-black`
+              // here was the browser synthesising a heavier one by smearing the
+              // strokes sideways — which on a bitmap letterform closes its
+              // counters and reads as a blur rather than as emphasis. The size
+              // and the hard navy shadow already carry the heading; the weight
+              // was only costing it legibility.
+              "text-[clamp(2rem,4.6vw,3.8rem)] font-normal tracking-tight text-white [text-shadow:4px_4px_0_#0a2f5c]",
         )}
       >
         {STORY_RELEASE.title}
@@ -419,16 +451,16 @@ function Footer({
         />
       </div>
 
-      <p
-        className={cn(
-          "hidden shrink-0 font-chrome uppercase sm:block",
-          isDotm
-            ? "text-[9px] tracking-[0.3em] text-white/35"
-            : "text-[10px] font-bold tracking-[0.24em] text-[#7dd3fc]/80",
-        )}
-      >
-        Double-click a piece for full screen
-      </p>
+      {/* DEV DOES NOT CARRY THIS LINE. The gesture it describes is the same on
+          both desktops, but DEV's copy of the wall already says "Click · play /
+          Double-click · full screen" on every hovered piece, and repeating it
+          along the bottom in tracked caps made a footer of three controls read
+          as four. DOTM's cards are quieter, so it keeps the hint there. */}
+      {isDotm && (
+        <p className="hidden shrink-0 font-chrome text-[9px] uppercase tracking-[0.3em] text-white/35 sm:block">
+          Double-click a piece for full screen
+        </p>
+      )}
 
       <StepButton label="Forward" isDotm={isDotm} disabled={atEnd} onClick={onForward}>
         <svg viewBox="0 0 24 24" width={15} height={15} fill="none" aria-hidden="true">
@@ -553,6 +585,8 @@ function SlideCard({
   reduceMotion,
   revealed,
   innerRef,
+  activeId,
+  onActivate,
   onOpen,
 }: {
   slide: StorySlide;
@@ -561,6 +595,9 @@ function SlideCard({
   reduceMotion: boolean;
   revealed: boolean;
   innerRef: (el: HTMLElement | null) => void;
+  /** Which piece currently holds the wall's one playback slot, if any. */
+  activeId: string | null;
+  onActivate: (id: string | null) => void;
   onOpen: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -576,9 +613,42 @@ function SlideCard({
    * thing — and `onMouseLeave` then stopped it. Clicking a piece to watch it
    * and having it die the moment the pointer moved an inch was the bug: the
    * click may as well not have been wired.
+   *
+   * ONLY THE PREVIEW IS HELD HERE. Whether this card is the one *playing* is
+   * the wall's business, not the card's — `activeId` is the single copy of
+   * that fact, and `mode` is derived from it. The card used to keep its own
+   * `playing` flag alongside, which meant two records of one thing and an
+   * effect to reconcile them; every way of writing that effect either set
+   * state from inside an effect or left this card able to resume itself when
+   * the slot was released elsewhere. With one owner there is nothing to
+   * reconcile.
    */
-  const [mode, setMode] = useState<"idle" | "preview" | "playing">("idle");
+  const [preview, setPreview] = useState(false);
+  const playing = activeId === slide.id;
+  const mode: "idle" | "preview" | "playing" = playing
+    ? "playing"
+    : preview
+      ? "preview"
+      : "idle";
   const showingVideo = mode !== "idle";
+
+  /**
+   * Stop the element when this card is not the one playing.
+   *
+   * The only thing this effect does is drive the media element — an external
+   * system, which is what effects are for. No state is touched: `activeId`
+   * moving is what already changed `mode`, and this is that change reaching
+   * the `<video>`. Rewound and re-muted, so the piece is back at its poster
+   * with a silent preview available, exactly as it was before it was clicked.
+   */
+  useEffect(() => {
+    if (mode !== "idle") return;
+    const el = videoRef.current;
+    if (!el) return;
+    el.pause();
+    el.currentTime = 0;
+    el.muted = true;
+  }, [mode]);
 
   /**
    * Pending single-click, held so a double-click can cancel it.
@@ -601,8 +671,8 @@ function SlideCard({
 
   /** Hover taste. Never interrupts a film the visitor deliberately started. */
   const startPreview = () => {
-    if (mode === "playing") return;
-    setMode("preview");
+    if (playing) return;
+    setPreview(true);
     const el = videoRef.current;
     if (!el) return;
     el.muted = true;
@@ -610,8 +680,8 @@ function SlideCard({
   };
 
   const endPreview = () => {
-    if (mode === "playing") return;
-    setMode("idle");
+    if (playing) return;
+    setPreview(false);
     const el = videoRef.current;
     if (el) {
       el.pause();
@@ -623,13 +693,17 @@ function SlideCard({
   const togglePlay = () => {
     const el = videoRef.current;
     if (!el) return;
-    if (mode === "playing") {
+    if (playing) {
       el.pause();
-      setMode("idle");
       el.currentTime = 0;
+      setPreview(false);
+      onActivate(null);
       return;
     }
-    setMode("playing");
+    // Claiming the wall's one slot. Whichever piece was playing sees the id
+    // change, derives its way back to idle, and its own effect stops it.
+    setPreview(false);
+    onActivate(slide.id);
     // A click is a user gesture, so unmuting here is allowed. The preview is
     // silent precisely so that this is the moment sound arrives.
     el.muted = false;
@@ -729,7 +803,14 @@ function SlideCard({
           // A film started by a click runs to its end and stops; only the
           // hover taste loops, because a taste has no end to reach.
           loop={mode === "preview"}
-          onEnded={() => setMode("idle")}
+          // Releases the wall's slot as well as resetting this card: a piece
+          // that ran to its end is no longer the one playing, and leaving the
+          // id set would make the next card's claim look like a hand-over from
+          // something already finished.
+          onEnded={() => {
+            setPreview(false);
+            onActivate(null);
+          }}
         />
 
         {/* The affordance stays quiet until the card is hovered — the artwork
@@ -766,7 +847,10 @@ function SlideCard({
             "min-w-0 font-headline uppercase leading-tight",
             isDotm
               ? "text-base tracking-[0.05em] text-white sm:text-lg"
-              : "text-lg font-black tracking-tight text-white sm:text-xl",
+              : // Unbolded, for the reason the wall's heading was — see
+                // `Header`. Size alone separates the title from the theme
+                // beside it.
+                "text-lg font-normal tracking-tight text-white sm:text-xl",
           )}
         >
           {slide.title}
@@ -776,7 +860,7 @@ function SlideCard({
             "shrink-0 font-chrome uppercase",
             isDotm
               ? "text-[9px] tracking-[0.26em] text-white/40"
-              : "text-[10px] font-bold tracking-[0.2em] text-[#7dd3fc]",
+              : "text-[10px] font-normal tracking-[0.2em] text-[#7dd3fc]",
           )}
         >
           {slide.theme}

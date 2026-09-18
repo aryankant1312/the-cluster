@@ -84,6 +84,43 @@
   }
 }
 
+/* Cluster Wall volume: a vertical black track with a white control in both
+   personas. `writing-mode` lives on the input so keyboard direction and the
+   value axis agree with what is drawn. */
+.wall-volume-slider {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  background: #050505;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.wall-volume-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #050505;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px #ffffff;
+}
+
+.wall-volume-slider::-moz-range-track {
+  width: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: #050505;
+}
+
+.wall-volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #050505;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
 /**
  * The DOTM door's own faces, pinned.
  *
@@ -322,6 +359,22 @@ body {
   background: #ffffff;
   border-radius: 50%;
 }
+
+/* The stop the rail beside the map is currently showing.
+
+   Navy rather than crimson, and lifted a little. The pins are otherwise
+   identical and small, and on a grey basemap a change of hue reads faster than
+   a change of size would; the scale is the second signal, because colour is
+   never allowed to be the only one. `transform-origin` is the pin's own point,
+   so it grows away from the place it marks rather than off it. */
+.show-pin--selected {
+  transform: scale(1.18);
+  transform-origin: 13px 32px;
+}
+.show-pin--selected .show-pin-body {
+  background: #0a2f5c;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+}
 .leaflet-tooltip.show-pin-badge {
   background: #111214;
   color: #ffffff;
@@ -373,6 +426,14 @@ body {
 }
 
 /* /enter boot screen: multi-ring pulse + glow around the play button. */
+.intro-title-video::-webkit-media-controls,
+.intro-title-video::-webkit-media-controls-enclosure,
+.intro-title-video::-webkit-media-controls-panel,
+.intro-title-video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
 @keyframes enter-play-pulse {
   0% {
     transform: scale(1);
@@ -581,6 +642,18 @@ body {
 .flows-type .font-headline {
   font-weight: 700;
   letter-spacing: -0.015em;
+}
+
+/* EXCEPT ON DEV, where the whole Story window is set at one weight.
+
+   The bold above is DOTM's: its Four Flows sits on a black ground beside a
+   heavy display persona and needs the extra mass to hold. DEV's Story window
+   reads as a document rather than as a title card — its Finding Peace tab was
+   unbolded in the same pass, in `StoryWall` — and 700 here left the two tabs of
+   one window disagreeing about how loud a heading is. The tracking stays: it
+   was cut for a tight grotesque, and that is still the face. */
+[data-persona="dev"] .flows-type .font-headline {
+  font-weight: 400;
 }
 
 /* Glass over black, for the Four Flows stations.
@@ -1348,14 +1421,25 @@ body:has(.admin-surface) {
    `color-scheme: dark` is declared on the field rather than on the desktop:
    DEV's own vault is a deliberate white field with black type, and a scheme
    set at desktop level would reach it too. */
-.vault-code-input {
+/* EVERY DARK FIELD ON DOTM, not only the Vault's.
+
+   The Vault was where this was first diagnosed, but nothing about the fault is
+   specific to it: any field on DOTM is white type on a near-black ground, and
+   any of them left without a declared `color-scheme` gets the UA's dark fill
+   painted over its author colour on a machine in light mode. `dotm-dark-field`
+   is the same treatment for the sign-in panel's email and one-time-code
+   inputs, which had the identical `text-white` on `bg-black` and the identical
+   invisible result. Add the class to any new one. */
+.vault-code-input,
+.dotm-dark-field {
   color-scheme: dark;
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
   caret-color: #ff0033;
 }
 
-.vault-code-input::placeholder {
+.vault-code-input::placeholder,
+.dotm-dark-field::placeholder {
   color: rgba(255, 255, 255, 0.42);
   -webkit-text-fill-color: rgba(255, 255, 255, 0.42);
   opacity: 1; /* Firefox dims placeholders by default; the colour above is the intent. */
@@ -1363,8 +1447,34 @@ body:has(.admin-surface) {
 
 .vault-code-input:-webkit-autofill,
 .vault-code-input:-webkit-autofill:hover,
-.vault-code-input:-webkit-autofill:focus {
+.vault-code-input:-webkit-autofill:focus,
+.dotm-dark-field:-webkit-autofill,
+.dotm-dark-field:-webkit-autofill:hover,
+.dotm-dark-field:-webkit-autofill:focus {
   -webkit-text-fill-color: #ffffff;
   -webkit-box-shadow: 0 0 0 1000px #0b0b0b inset;
   caret-color: #ff0033;
+}
+
+/* The loader's black ball keeps the original 205-unit bounce over the M. */
+.dotm-loader-bounce {
+  animation: dotm-loader-bounce 1.2s ease-in-out infinite;
+  transform-box: view-box;
+}
+
+@keyframes dotm-loader-bounce {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(205px);
+  }
+}
+
+/* Reduced motion leaves the ball resting above the M. */
+@media (prefers-reduced-motion: reduce) {
+  .dotm-loader-bounce {
+    animation: none;
+  }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import type { Show } from "@/content/types";
@@ -25,11 +25,42 @@ function makePin(selected: boolean) {
   });
 }
 
+function KeepMapSized() {
+  const map = useMap();
+
+  useEffect(() => {
+    const fix = () => map.invalidateSize({ animate: false });
+    fix();
+    const settle = setTimeout(fix, 250);
+
+    const box = map.getContainer();
+    const observer = new ResizeObserver(fix);
+    observer.observe(box);
+
+    return () => {
+      clearTimeout(settle);
+      observer.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
+
 function FlyTo({ coords }: { coords: [number, number] | null }) {
   const map = useMap();
+  const flownTo = useRef<string | null | undefined>(undefined);
+
   useEffect(() => {
-    if (coords) map.flyTo(coords, 11, { duration: 1.1 });
+    const place = coords ? `${coords[0]},${coords[1]}` : null;
+    if (flownTo.current === undefined) {
+      flownTo.current = place;
+      return;
+    }
+    if (place === null || place === flownTo.current) return;
+    flownTo.current = place;
+    if (coords) map.flyTo(coords, Math.max(map.getZoom(), 8), { duration: 1.1 });
   }, [coords, map]);
+
   return null;
 }
 
@@ -59,6 +90,7 @@ export function DotmShowsMap({
       zoomControl={false}
       className="w-full h-full bg-[#0b0b0d]"
     >
+      <KeepMapSized />
       {/*
         ESRI, NOT CARTO — AND THE REASON IS NOT A BROKEN URL.
         `basemaps.cartocdn.com` still answers 200 with a valid PNG, so nothing

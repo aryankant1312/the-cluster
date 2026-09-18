@@ -23,7 +23,10 @@ export function DesktopTile({
       initial={{ x: initial.x, y: initial.y, opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 18 }}
-      onClick={() => setSelected(true)}
+      onClick={() => {
+        setSelected(true);
+        onOpen?.();
+      }}
       onBlur={() => setSelected(false)}
       onDoubleClick={onOpen}
       style={{ position: "absolute" }}

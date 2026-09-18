@@ -18,12 +18,19 @@ export const ENQUIRY_TYPES = [
 ] as const;
 export type EnquiryType = (typeof ENQUIRY_TYPES)[number];
 
+/**
+ * Title Case, matching the Book DOTM window these are read in.
+ *
+ * DISPLAY STRINGS ONLY. The keys beside them are what `enquiry_type` stores
+ * and what the API validates against, and those do not change — re-casing a
+ * label can never orphan a row.
+ */
 export const ENQUIRY_LABELS: Record<EnquiryType, string> = {
-  live_show: "Live show",
+  live_show: "Live Show",
   festival: "Festival",
-  brand_collab: "Brand collab",
-  private_event: "Private event",
-  feature: "Feature / music",
+  brand_collab: "Brand Collab",
+  private_event: "Private Event",
+  feature: "Feature / Music",
   interview: "Interview",
   other: "Other",
 };

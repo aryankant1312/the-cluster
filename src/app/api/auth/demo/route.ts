@@ -50,7 +50,7 @@ export async function POST(request: Request) {
    * they never satisfied. The panel always sends it; anything that does not is
    * not the panel.
    */
-  const body = (await request.json().catch(() => ({}))) as { persona?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { persona?: unknown; remember?: unknown };
   const persona = parsePersona(body.persona);
   if (!persona) {
     return NextResponse.json(
@@ -67,6 +67,7 @@ export async function POST(request: Request) {
   const cookie = await createSession(user.id, persona, {
     userAgent: request.headers.get("user-agent") ?? "",
     ipHash: hashIp(ip),
+    remember: body.remember === true,
   });
 
   const response = NextResponse.json({
@@ -74,5 +75,7 @@ export async function POST(request: Request) {
     user: { id: user.id, email: user.email, name: user.name, picture: user.picture },
   });
   response.cookies.set(cookie.name, cookie.value, sessionCookieOptions(cookie.maxAge));
+  response.cookies.set("cluster_session_dev", "", sessionCookieOptions(0));
+  response.cookies.set("cluster_session_dotm", "", sessionCookieOptions(0));
   return response;
 }

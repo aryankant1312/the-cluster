@@ -33,7 +33,7 @@ const LetterGlitch = ({
   >([]);
   const grid = useRef({ columns: 0, rows: 0 });
   const context = useRef<CanvasRenderingContext2D | null>(null);
-  const lastGlitchTime = useRef(Date.now());
+  const lastGlitchTime = useRef(0);
 
   const lettersAndSymbols = Array.from(characters);
 
@@ -94,18 +94,22 @@ const LetterGlitch = ({
     if (!parent) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const rect = parent.getBoundingClientRect();
+    // Layout dimensions deliberately ignore the window's opening transform.
+    // Measuring its scaled bounding rectangle captured the spring's 94% first
+    // frame and left the canvas permanently short of every edge.
+    const width = parent.clientWidth;
+    const height = parent.clientHeight;
 
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
 
     if (context.current) {
       context.current.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    const { columns, rows } = calculateGrid(rect.width, rect.height);
+    const { columns, rows } = calculateGrid(width, height);
     initializeLetters(columns, rows);
     drawLetters();
   };
@@ -176,12 +180,11 @@ const LetterGlitch = ({
     if (needsRedraw) drawLetters();
   };
 
-  const animate = () => {
+  const animate = (now: number) => {
     // The loop stops itself once the canvas has gone, rather than scheduling
     // another frame that has nothing to draw on.
     if (!canvasRef.current) return;
 
-    const now = Date.now();
     if (now - lastGlitchTime.current >= glitchSpeed) {
       updateLetters();
       drawLetters();
@@ -197,7 +200,7 @@ const LetterGlitch = ({
 
     context.current = canvas.getContext("2d");
     resizeCanvas();
-    animate();
+    animationRef.current = requestAnimationFrame(animate);
 
     let resizeTimeout: ReturnType<typeof setTimeout>;
     const handleResize = () => {
@@ -205,14 +208,17 @@ const LetterGlitch = ({
       resizeTimeout = setTimeout(() => {
         cancelAnimationFrame(animationRef.current as number);
         resizeCanvas();
-        animate();
+        animationRef.current = requestAnimationFrame(animate);
       }, 100);
     };
 
     window.addEventListener("resize", handleResize);
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(canvas.parentElement ?? canvas);
     return () => {
       cancelAnimationFrame(animationRef.current!);
       window.removeEventListener("resize", handleResize);
+      observer.disconnect();
 
       /**
        * The debounced resize has to be cancelled too.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { useWindowManager } from "./window-manager-context";
 import {
   BOTTOM_BAR_SAFE_AREA,
@@ -73,6 +73,7 @@ export function DotmWindow({
 }) {
   const wm = useWindowManager();
   const shellRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const [closing, setClosing] = useState(false);
   const [bounds, setBounds] = useState<ReturnType<typeof desktopDragBounds>>(undefined);
   const offsets = useCenterOffsets(shellRef, width, height);
@@ -96,6 +97,15 @@ export function DotmWindow({
   const [expanded, setExpanded] = useState(true);
   const canFullscreen = placement === "fullscreen";
   const effective = canFullscreen && !expanded ? "fill" : placement;
+  const movable = effective !== "fill" && effective !== "fullscreen";
+
+  useEffect(() => {
+    if (!isOpen || !movable) return;
+    const measure = () => setBounds(desktopDragBounds(shellRef.current));
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [isOpen, movable]);
 
   const close = useCallback(() => {
     setClosing(true);
@@ -158,11 +168,12 @@ export function DotmWindow({
           ref={shellRef}
           // A filled window has nowhere to be dragged to; letting it move
           // only lets the visitor push its own title bar off screen.
-          drag={effective !== "fill" && effective !== "fullscreen"}
+          drag={movable}
+          dragListener={false}
+          dragControls={dragControls}
           dragMomentum={false}
           dragElastic={0}
           dragConstraints={bounds}
-          onDragStart={() => setBounds(desktopDragBounds(shellRef.current))}
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: closing ? 0 : 1, scale: closing ? 0.94 : 1 }}
           exit={{ opacity: 0, scale: 0.94 }}
@@ -239,8 +250,18 @@ export function DotmWindow({
           }}
           className="macos-glass flex flex-col overflow-hidden rounded-[var(--radius-window)] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.35)]"
         >
-          <div className="group/lights relative flex shrink-0 cursor-move select-none items-center justify-center border-b border-white/10 px-3 py-2">
-            <div className="absolute left-3 flex items-center gap-1.5">
+          <div
+            className="group/lights relative flex shrink-0 cursor-move select-none items-center justify-center border-b border-white/10 px-3 py-2"
+            onPointerDown={(event) => {
+              if (!movable) return;
+              setBounds(desktopDragBounds(shellRef.current));
+              dragControls.start(event);
+            }}
+          >
+            <div
+              className="absolute left-3 flex items-center gap-1.5"
+              onPointerDown={(event) => event.stopPropagation()}
+            >
               <TrafficLight color="#ff5f57" label="Close" onClick={close} glyph="close" />
               <TrafficLight
                 color="#febc2e"

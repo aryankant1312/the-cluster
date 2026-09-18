@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePersona } from "@/components/providers/PersonaProvider";
 import { SpectrumCountdown } from "@/components/countdown/SpectrumCountdown";
 import { AccountMenu } from "@/components/auth/AccountMenu";
+import { NotificationMenu } from "@/components/chrome/NotificationMenu";
+import { useWindowManager } from "@/components/window-manager/window-manager-context";
 import { cn } from "@/lib/utils";
 
 /**
@@ -24,11 +26,14 @@ import { cn } from "@/lib/utils";
  */
 export function PersonaTopBar() {
   const { persona } = usePersona();
+  const wm = useWindowManager();
+
+  if (wm.chromeHidden) return null;
 
   return (
     <header
       className={cn(
-        "persona-topbar sticky top-0 z-40 flex items-center justify-between gap-4 px-4 py-2",
+        "persona-topbar sticky top-0 z-[300] flex items-center justify-between gap-4 px-4 py-2",
         persona === "dev" && "win98-border",
       )}
     >
@@ -39,7 +44,10 @@ export function PersonaTopBar() {
       {/* The account, top right — the one place both faces now agree on. It
           renders nothing while signed out, so the bar's geometry before the
           first session read is exactly what it was. */}
-      <AccountMenu skin={persona} align="right" side="down" />
+      <div className="flex shrink-0 items-center gap-2">
+        <NotificationMenu skin={persona} />
+        <AccountMenu skin={persona} align="right" side="down" />
+      </div>
     </header>
   );
 }

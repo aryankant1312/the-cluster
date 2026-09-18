@@ -16,6 +16,7 @@ export const DEV_WINDOWS: DevWindowMeta[] = [
   { id: "vault", title: "The Vault", glyph: "▣", label: "The Vault" },
   { id: "cluster-wall", title: "Cluster Wall", glyph: "▤", label: "Cluster Wall" },
   { id: "shoot-on-sight", title: "Shoot at Site", glyph: "◎", label: "Shoot at Site" },
+  { id: "shows", title: "Shows", glyph: "📍", label: "Shows" },
   { id: "recycle-bin", title: "Recycle Bin", glyph: "♻", label: "Recycle Bin" },
   { id: "contact", title: "Contact", glyph: "✉", label: "Contact Me" },
   { id: "music-player", title: "Music", glyph: "▶", label: "Music" },

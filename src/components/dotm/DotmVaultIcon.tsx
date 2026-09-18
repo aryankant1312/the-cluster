@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import { useWindowManager } from "@/components/window-manager/window-manager-context";
 import {
@@ -91,6 +91,18 @@ export function DotmVaultIcon() {
   // Minimized does not count. A minimized window has handed the desktop back,
   // and the coin is desktop furniture — so it returns with the rest of it.
   const covered = COIN_HIDDEN_FOR.some((id) => wm.isOpen(id) && !wm.isMinimized(id));
+
+  useEffect(() => {
+    const updateBounds = () => {
+      if (ref.current) {
+        setBounds(desktopFreeBounds(ref.current));
+      }
+    };
+    updateBounds();
+    window.addEventListener("resize", updateBounds);
+    return () => window.removeEventListener("resize", updateBounds);
+  }, [covered]);
+
   if (covered) return null;
 
   return (
@@ -107,17 +119,18 @@ export function DotmVaultIcon() {
         setBounds(desktopFreeBounds(ref.current));
       }}
       /**
-       * Steer around the dock and its tray, frame by frame.
-       *
-       * The rectangle above already keeps the coin on screen and under the top
-       * bar; this is the part a rectangle cannot do. `pushOutOfObstacles`
-       * returns the shortest way out of whichever pill the coin is touching,
-       * so it slides past the dock's flank when it comes in from the side and
-       * lifts over its top edge when it comes down from above — and the wide
-       * open desktop either side of the dock stays reachable, all the way into
-       * the bottom-left corner.
+       * Steer around the dock and its tray, frame by frame,
+       * and enforce the top nav bar's lower margin boundary.
        */
       onDrag={() => {
+        const topBar = typeof document !== "undefined" ? document.querySelector<HTMLElement>(".persona-topbar") : null;
+        const minTop = topBar ? topBar.getBoundingClientRect().bottom : 64;
+        if (ref.current) {
+          const rect = ref.current.getBoundingClientRect();
+          if (rect.top < minTop) {
+            y.set(y.get() + (minTop - rect.top));
+          }
+        }
         const push = pushOutOfObstacles(ref.current);
         if (!push) return;
         if (push.dx) x.set(x.get() + push.dx);

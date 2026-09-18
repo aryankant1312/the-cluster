@@ -72,6 +72,8 @@ interface ImageBoxProps {
     style?: CSSProperties;
 }
 
+// The upstream component accepts arbitrary image-like values.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const srcOf = (image: any): string =>
     typeof image === "string" ? image : (image?.src ?? "");
 
@@ -109,10 +111,12 @@ export default function ImageBox(props: Partial<ImageBoxProps>) {
     }, [colors]);
 
     const cfgRef = useRef<{ speed: number; boost: number }>({ speed: 1, boost: 1 });
-    cfgRef.current = {
-        speed: Math.max(0, speed) / 100,
-        boost: Math.max(0, boost) / 10,
-    };
+    useEffect(() => {
+        cfgRef.current = {
+            speed: Math.max(0, speed) / 100,
+            boost: Math.max(0, boost) / 10,
+        };
+    }, [boost, speed]);
 
     useEffect(() => {
         const frame = frameRef.current;

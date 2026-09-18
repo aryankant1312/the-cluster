@@ -6,7 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { shows } from "@/content/shows";
-import { ShowsList } from "@/components/shows/ShowsList";
+import { NextCityBoard } from "@/components/shows/NextCityBoard";
+import { PastShowsRail } from "@/components/shows/PastShowsRail";
 import { usePersona } from "@/components/providers/PersonaProvider";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,18 @@ export default function ShowsPage() {
   const { persona } = usePersona();
   const [view, setView] = useState<"map" | "list">("map");
   const isDev = persona === "dev";
+
+  /**
+   * WHICH STOP THE MAP AND THE RAIL ARE BOTH LOOKING AT.
+   *
+   * Held here rather than in either of them, because it belongs to neither:
+   * pressing a card flies the map, pressing a pin lights a card, and a piece of
+   * state owned by one of the two would have to be pushed back up to the other
+   * anyway. Opens on the first stop so the rail is never a column of cards with
+   * nothing chosen and no links showing.
+   */
+  const past = shows.filter((s) => s.isPast);
+  const [selectedId, setSelectedId] = useState<string | null>(past[0]?.id ?? null);
 
   return (
     // `min-h-0` is what stops this page scrolling. Without it a flex child in
@@ -156,21 +169,40 @@ export default function ShowsPage() {
       </div>
 
       {view === "map" ? (
-        // Was a hard 560px, which on a 900px-tall laptop put the map's bottom
-        // edge below the fold and made the page scroll — on a *map*, where the
-        // page scrolling and the map panning are the same gesture. It fills
-        // the leftover height instead, so it is as tall as the screen allows
-        // and never taller.
-        <div
-          className={cn(
-            "mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-hidden",
-            isDev ? "win98-border" : "macos-glass rounded-2xl",
-          )}
-        >
-          <IndiaShowsMap shows={shows} />
+        /*
+          MAP LEFT, ITINERARY RIGHT — DOTM's arrangement, on DEV's furniture.
+
+          The map used to be the whole of this tab: one wide panel, and the
+          dates it was plotting a tab away in a list. Side by side, the pins and
+          the dates are one object again, and the venue and clip links that were
+          buried in that list are attached to the stop they describe. See
+          `PastShowsRail`, and `PastView` in the DOTM Shows window for the
+          original of the layout.
+
+          1.6fr / 1fr rather than an even split: the map is the half that gets
+          worse when it is squeezed, and the rail is a column of short cards
+          that does not get better past about 380px. Below `lg` they stack, map
+          first, which is the reading order.
+
+          The height was a hard 560px once, which on a 900px-tall laptop put the
+          map's bottom edge below the fold and made the *page* scroll — on a
+          map, where page-scroll and map-pan are the same gesture. Both columns
+          flex into whatever the header leaves instead.
+        */
+        <div className="mx-auto grid min-h-0 w-full max-w-[1500px] flex-1 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <div
+            className={cn(
+              "min-h-[280px] overflow-hidden",
+              isDev ? "win98-border" : "macos-glass rounded-2xl",
+            )}
+          >
+            <IndiaShowsMap shows={past} selectedId={selectedId} onSelect={setSelectedId} />
+          </div>
+
+          <PastShowsRail shows={past} selectedId={selectedId} onSelect={setSelectedId} />
         </div>
       ) : (
-        <ShowsList shows={shows} />
+        <NextCityBoard />
       )}
     </main>
   );

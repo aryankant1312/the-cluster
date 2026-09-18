@@ -303,55 +303,6 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
             }}
           />
 
-          {/*
-            The scan tile, shrunk and turned to glass.
-
-            It used to run the full width of the column with a 64px code in it,
-            which laid an opaque black slab across the bottom third of the
-            photograph. It is an `inline-flex` sized to its own contents now, so
-            it takes only the corner — and it is glass rather than paint:
-            `backdrop-blur` with a saturate, a lit top edge and a soft drop, so
-            the picture stays legible *through* it instead of being covered.
-
-            `saturate` on top of the blur is what separates glass from frosted
-            plastic — it keeps the warm browns behind the tile alive rather than
-            washing them grey.
-
-            The code itself keeps its white plate. A QR is read by a camera, not
-            by a person, and a transparent one over a photograph does not scan.
-          */}
-          <div className="absolute inset-x-0 bottom-0 p-4">
-            <a
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 rounded-xl border border-white/25 p-2 transition-[border-color] hover:border-[#ff2244] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              style={{
-                background:
-                  "linear-gradient(140deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.02) 100%)",
-                backdropFilter: "blur(16px) saturate(160%)",
-                WebkitBackdropFilter: "blur(16px) saturate(160%)",
-                boxShadow:
-                  "inset 0 1px 0 rgba(255,255,255,0.4), 0 10px 26px -12px rgba(0,0,0,0.85)",
-              }}
-            >
-              <Image
-                src="/images/dotm/instagram-qr.png"
-                alt=""
-                width={44}
-                height={44}
-                className="h-11 w-11 shrink-0 rounded-md bg-white p-0.5"
-              />
-              <span className="min-w-0 pr-1">
-                <span className="block font-mono text-[8px] uppercase tracking-[0.24em] text-white/65">
-                  Scan
-                </span>
-                <span className="block truncate font-sans text-[13px] font-bold uppercase tracking-wide text-white">
-                  @devilonthemic
-                </span>
-              </span>
-            </a>
-          </div>
         </aside>
       </div>
     </div>

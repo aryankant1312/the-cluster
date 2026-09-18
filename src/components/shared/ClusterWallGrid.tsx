@@ -2,43 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clusterWallTiles } from "@/content/cluster-wall.generated";
+import { DotmLoader } from "@/components/shared/DotmLoader";
 import { cn } from "@/lib/utils";
-
-/**
- * THE WALL — a field of moving images, edge to edge.
- *
- * Modelled on eyecannndy.com's landing page: a dense masonry of looping clips
- * at their own proportions, tops aligned, bottoms ragged, with a name that
- * arrives on hover and is otherwise out of the way. The images are the page.
- * There is no hero, no heading and no introduction, because a wall of moving
- * pictures explains itself faster than a sentence about it would.
- *
- * PLAIN `<img>`, NOT `next/image`. This is not an oversight and must not be
- * "fixed". The optimizer re-encodes what it is given, and a GIF that comes out
- * the other side as a still WebP is a GIF that has stopped moving — the whole
- * point of the wall, silently lost, on a surface where nothing would look
- * broken. `unoptimized` would also work, but then `next/image` is doing
- * nothing except adding a wrapper.
- *
- * THE MOVING TILES ARE `<video>`, NOT GIF. See the note in
- * `scripts/build-cluster-wall.mjs`: the clips are phone video, a GIF of one is
- * enormous and — decisively — silent, and the speaker control below has to
- * have something to turn on. Muted, looping, `playsInline`, and playing only
- * while on screen, they read exactly as GIFs and keep their sound.
- *
- * CSS COLUMNS, NOT A JS MASONRY. `column-count` already does exactly this
- * layout: fill top to bottom, break to the next column, keep every tile whole.
- * A measured layout would need every image's height before it could place
- * anything — either a blocking decode pass or a first frame in the wrong
- * arrangement — and would have to re-run on every resize. The browser does it
- * per frame, for free.
- *
- * SPACE IS RESERVED FROM THE MANIFEST. Each tile carries the intrinsic size
- * read off the file header at build time, applied as an `aspect-ratio`, so the
- * columns reach their final shape before a single byte of media arrives.
- * Without it the wall reflows as each file lands — the exact layout shift the
- * generated manifest exists to prevent.
- */
 
 interface Tally {
   up: number;
@@ -48,87 +13,63 @@ interface Tally {
 type Position = 1 | -1 | 0;
 
 export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
-  /**
-   * Which tile is under the pointer.
-   *
-   * Held in state rather than left to `group-hover`, because focus has to
-   * light the same controls a pointer does and a keyboard has no hover. One id
-   * is enough: only one tile can be under the pointer at a time.
-   */
   const [active, setActive] = useState<string | null>(null);
 
   const [counts, setCounts] = useState<Record<string, Tally>>({});
   const [mine, setMine] = useState<Record<string, Position>>({});
 
-  /**
-   * THE ORDER WAITS FOR THE SCORES, which is why this flag exists.
-   *
-   * The wall is arranged best-first and the scores arrive over the network a
-   * moment after this mounts. Drawing the manifest order first and re-sorting
-   * on arrival would reshuffle twenty-three tiles in front of somebody who had
-   * already started looking at them — and because the layout is CSS columns,
-   * every tile after the first change moves with it. Waiting one request costs
-   * a beat of black on a surface that is black anyway.
-   *
-   * Set on failure too: a wall that cannot reach the API still draws, in
-   * whatever order the manifest happens to be in.
-   */
   const [ordered, setOrdered] = useState(false);
 
-  /**
-   * ONE TILE MAKES SOUND AT A TIME, and it is held here rather than per tile.
-   *
-   * Twenty-five clips that each unmute independently is twenty-five clips
-   * playing at once the moment somebody is curious twice — which is not a wall,
-   * it is a noise. Holding the id centrally means turning one on turns the
-   * previous one off, with no coordination between siblings.
-   */
   const [audible, setAudible] = useState<string | null>(null);
+  const [volumeMap, setVolumeMap] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/wall/votes", { cache: "no-store" });
-        if (!res.ok) return;
-        const body = (await res.json()) as {
-          counts: Record<string, Tally>;
-          mine: Record<string, Position>;
-        };
-        if (cancelled) return;
-        setCounts(body.counts ?? {});
-        setMine(body.mine ?? {});
-      } catch {
-        // The wall draws without its numbers. A tally that cannot be read is
-        // not a reason to fail the window it is written on.
-      } finally {
-        if (!cancelled) setOrdered(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const [error, setError] = useState("");
+  const pending = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const fetching = useRef(false);
+  const generation = useRef(0);
+  const refresh = useCallback(async () => {
+    if (pending.current || fetching.current) return;
+    fetching.current = true;
+    const version = ++generation.current;
+    try {
+      const res = await fetch("/api/wall/votes", { cache: "no-store" });
+      if (!res.ok) throw new Error("Votes are temporarily unavailable.");
+      const body = await res.json();
+      if (version !== generation.current || pending.current) return;
+      setCounts(body.counts);
+      setMine(body.mine);
+      setError("");
+    } catch {
+      if (version === generation.current) setError("Votes could not be refreshed. Please try again.");
+    } finally {
+      fetching.current = false;
+      if (version === generation.current) setOrdered(true);
+    }
   }, []);
+  useEffect(() => {
+    const initialRead = setTimeout(() => void refresh(), 0);
+    const update = () => {
+      if (!document.hidden) void refresh();
+    };
+    const timer = setInterval(update, 5000);
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      // Invalidate network responses still in flight when this subscription ends.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      generation.current++;
+      clearTimeout(initialRead);
+      clearInterval(timer);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [refresh]);
 
-  /**
-   * Best first.
-   *
-   * NET SCORE, NOT RAW UPVOTES. A tile with two thousand up and eighteen
-   * hundred down is contested, not loved, and putting it above a quieter tile
-   * everybody liked would misreport the wall. Subtracting is what makes the
-   * order mean "what people actually rate".
-   *
-   * Ties fall back to the manifest's own order, which is alphabetical by
-   * filename — stable across machines and across reloads, so two tiles on the
-   * same score never swap places between visits.
-   *
-   * `slice()` first: `sort` mutates, and `clusterWallTiles` is a module-level
-   * import shared with anything else that reads it.
-   */
   const tiles = useMemo(() => {
     const score = (id: string) => {
       const t = counts[id];
-      return t ? t.up - t.down : 0;
+      return t?.up ?? 0;
     };
     return clusterWallTiles
       .map((tile, index) => ({ tile, index }))
@@ -136,56 +77,29 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
       .map((entry) => entry.tile);
   }, [counts]);
 
-  /**
-   * Cast optimistically, then reconcile with what the server actually stored.
-   *
-   * The arrow has to light on the press. A round trip before the number moves
-   * makes a control that should feel instant feel broken on any connection
-   * worse than the developer's — and the server answers with the authoritative
-   * totals anyway, so the optimistic guess is corrected inside the same
-   * interaction rather than being trusted.
-   */
-  const cast = useCallback(
-    async (tileId: string, value: 1 | -1) => {
-      const held = mine[tileId] ?? 0;
-      const next: Position = held === value ? 0 : value;
-
-      setMine((prev) => ({ ...prev, [tileId]: next }));
-      setCounts((prev) => {
-        const cur = prev[tileId] ?? { up: 0, down: 0 };
-        const delta = (v: 1 | -1) => (next === v ? 1 : 0) - (held === v ? 1 : 0);
-        return {
-          ...prev,
-          [tileId]: {
-            up: Math.max(0, cur.up + delta(1)),
-            down: Math.max(0, cur.down + delta(-1)),
-          },
-        };
+  const cast = useCallback(async (tileId: string, value: 1 | -1) => {
+    if (pending.current) return;
+    pending.current = true;
+    setSaving(true);
+    generation.current++;
+    setError("");
+    try {
+      const res = await fetch("/api/wall/votes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tile_id: tileId, value }),
       });
-
-      try {
-        const res = await fetch("/api/wall/votes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tile_id: tileId, value }),
-        });
-        if (!res.ok) return;
-        const body = (await res.json()) as {
-          ok: boolean;
-          counts: Record<string, Tally>;
-          position: Position;
-        };
-        if (!body.ok) return;
-        setCounts(body.counts);
-        setMine((prev) => ({ ...prev, [tileId]: body.position }));
-      } catch {
-        // Left on the optimistic value. The next load reads the truth, and
-        // snapping the arrow back under the cursor would be worse than being
-        // one vote out until then.
-      }
-    },
-    [mine],
-  );
+      const body = await res.json();
+      if (!res.ok || !body.ok) throw new Error("Vote failed");
+      setCounts(body.counts);
+      setMine((prev) => ({ ...prev, [tileId]: body.position }));
+    } catch {
+      setError("Your vote could not be confirmed. Refresh the counts before trying again.");
+    } finally {
+      pending.current = false;
+      setSaving(false);
+    }
+  }, []);
 
   if (clusterWallTiles.length === 0) {
     return (
@@ -198,14 +112,34 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-black">
+    // `relative`, so the loader below has something to be `inset-0` of.
+    <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-black">
+      {/*
+        THE WALL'S OWN LOADER, over the wall rather than instead of it.
+
+        `ordered` is the right signal and not an approximation of one: it flips
+        when the scores land, and the scores are what the wall's arrangement is
+        derived from, so it is the exact moment there is something correct to
+        look at. Until then the grid remains visible beneath the shared blur,
+        so the landing page itself supplies the loader's background.
+      */}
+      {error && (
+        <div role="status" className="p-3 text-sm text-white">
+          {error}{" "}
+          <button type="button" onClick={() => void refresh()} className="underline">
+            Refresh counts
+          </button>
+        </div>
+      )}
+      <DotmLoader show={!ordered} label="Loading the Cluster Wall" />
+
       {/* Held back until the scores land, so the wall is laid out once. See
           `ordered` above. The fade is what makes the wait read as the wall
           arriving rather than as a stall. */}
       <div
         className={cn(
           "columns-2 gap-2.5 p-2.5 transition-opacity duration-300 sm:columns-3 lg:columns-4 xl:columns-5",
-          ordered ? "opacity-100" : "opacity-0",
+          ordered ? "opacity-100" : "opacity-55",
         )}
       >
         {tiles.map((tile) => {
@@ -241,6 +175,7 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
                   height={tile.height}
                   lit={lit}
                   audible={audible === tile.id}
+                  volume={volumeMap[tile.id] ?? 0.85}
                 />
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -296,6 +231,7 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
                   glance instead of on inspection. */}
               <div className="wall-controls absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-1 py-0.5 backdrop-blur-sm">
                 <VoteButton
+                  disabled={saving || !ordered}
                   direction="up"
                   count={tally.up}
                   active={held === 1}
@@ -305,6 +241,7 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
                 />
                 <span aria-hidden="true" className="h-4 w-px bg-white/20" />
                 <VoteButton
+                  disabled={saving || !ordered}
                   direction="down"
                   count={tally.down}
                   active={held === -1}
@@ -318,11 +255,29 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
                   no sound to turn on, and a control that does nothing is worse
                   than no control at all. */}
               {canSound && (
-                <SpeakerButton
+                <SpeakerWithVolumeSlider
                   on={audible === tile.id}
+                  volume={volumeMap[tile.id] ?? 0.85}
                   isDotm={isDotm}
                   title={tile.title}
-                  onClick={() => setAudible((cur) => (cur === tile.id ? null : tile.id))}
+                  onClickToggle={() => {
+                    if (audible === tile.id) {
+                      setAudible(null);
+                    } else {
+                      setAudible(tile.id);
+                      if ((volumeMap[tile.id] ?? 0.85) === 0) {
+                        setVolumeMap((prev) => ({ ...prev, [tile.id]: 0.85 }));
+                      }
+                    }
+                  }}
+                  onVolumeChange={(vol) => {
+                    setVolumeMap((prev) => ({ ...prev, [tile.id]: vol }));
+                    if (vol > 0) {
+                      setAudible(tile.id);
+                    } else {
+                      setAudible(null);
+                    }
+                  }}
                 />
               )}
 
@@ -348,21 +303,6 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
   );
 }
 
-/**
- * One moving tile.
- *
- * IT PLAYS ONLY WHILE ON SCREEN. Twenty-five simultaneously decoding videos
- * will saturate the main thread on any machine, and the wall scrolls — most of
- * them are never looked at. An `IntersectionObserver` starts a clip as it comes
- * into view and pauses it as it leaves, which keeps the cost proportional to
- * what is actually being watched.
- *
- * `muted` IS ALSO SET AS A PROPERTY, not only as an attribute. React's `muted`
- * prop is unreliable on first render — it is applied after the element exists,
- * and an autoplaying video that is briefly unmuted is refused outright by the
- * autoplay policy. Setting it imperatively before play is attempted is what
- * makes autoplay stick.
- */
 function WallClip({
   src,
   title,
@@ -370,6 +310,7 @@ function WallClip({
   height,
   lit,
   audible,
+  volume = 0.85,
 }: {
   src: string;
   title: string;
@@ -377,6 +318,7 @@ function WallClip({
   height: number;
   lit: boolean;
   audible: boolean;
+  volume?: number;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
 
@@ -403,22 +345,17 @@ function WallClip({
   }, []);
 
   /**
-   * Sound follows the wall's single audible tile.
-   *
-   * Unmuting is a state change on an element that is already playing, and the
-   * press that caused it is the user gesture the autoplay policy asks for, so
-   * this needs no separate arrangement. Volume is set explicitly rather than
-   * left wherever the element happened to be.
+   * Sound follows the wall's single audible tile and volume setting.
    */
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.muted = !audible;
-    if (audible) {
-      el.volume = 0.85;
+    el.muted = !audible || volume === 0;
+    if (audible && volume > 0) {
+      el.volume = Math.max(0, Math.min(1, volume));
       void el.play().catch(() => {});
     }
-  }, [audible]);
+  }, [audible, volume]);
 
   return (
     <video
@@ -475,6 +412,7 @@ function compact(n: number): string {
 }
 
 function VoteButton({
+  disabled,
   direction,
   count,
   active,
@@ -482,6 +420,7 @@ function VoteButton({
   title,
   onClick,
 }: {
+  disabled: boolean;
   direction: "up" | "down";
   count: number;
   active: boolean;
@@ -496,6 +435,7 @@ function VoteButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={active}
       aria-label={label}
       title={label}
@@ -532,66 +472,112 @@ function VoteButton({
 
 /**
  * The speaker, struck through until somebody asks for sound.
- *
- * The strike is drawn rather than implied by a colour change: muted and
- * unmuted have to be distinguishable without relying on hue, and a line
- * through the glyph is the convention every player already uses.
+ * Hovering over the speaker icon pops up a volume slider that allows
+ * control over clip audio volume, closing when cursor leaves the area.
  */
-function SpeakerButton({
+function SpeakerWithVolumeSlider({
   on,
+  volume,
   isDotm,
   title,
-  onClick,
+  onClickToggle,
+  onVolumeChange,
 }: {
   on: boolean;
+  volume: number;
   isDotm: boolean;
   title: string;
-  onClick: () => void;
+  onClickToggle: () => void;
+  onVolumeChange: (vol: number) => void;
 }) {
+  const [showSlider, setShowSlider] = useState(false);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setShowSlider(true);
+  };
+
+  const handleMouseLeave = () => {
+    hideTimerRef.current = setTimeout(() => {
+      setShowSlider(false);
+    }, 200);
+  };
+
   const label = on ? `Mute ${title}` : `Play sound for ${title}`;
+  const effectiveVolume = on ? volume : 0;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={on}
-      aria-label={label}
-      title={label}
-      className={cn(
-        "wall-controls absolute bottom-2 right-2 z-10 grid h-8 w-8 place-items-center rounded-full",
-        "bg-black/65 backdrop-blur-sm transition-colors",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80",
-        on
-          ? isDotm
-            ? "text-[#ff5a70]"
-            : "text-[#8ec5ff]"
-          : "text-white/75 hover:text-white",
-      )}
+    <div
+      className="wall-controls absolute bottom-2 right-2 z-20 flex flex-col items-center gap-1.5"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" fill="none">
-        <path
-          d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"
-          fill="currentColor"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinejoin="round"
-        />
-        {on ? (
-          <path
-            d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.8a7.5 7.5 0 0 1 0 10.4"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
+      {showSlider && (
+        <div
+          className={cn(
+            "flex items-center justify-center rounded-full px-1.5 py-2.5 shadow-xl backdrop-blur-md transition-all duration-200",
+            isDotm ? "bg-black/90 ring-1 ring-white/20" : "bg-black/80 ring-1 ring-white/30"
+          )}
+        >
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.02"
+            value={effectiveVolume}
+            aria-label={`Volume slider for ${title}`}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              onVolumeChange(val);
+            }}
+            className="wall-volume-slider h-20 w-2 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            style={{ writingMode: "vertical-lr", direction: "rtl" }}
           />
-        ) : (
-          <path
-            d="M15 8.5l5 7M20 8.5l-5 7"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onClickToggle}
+        aria-pressed={on}
+        aria-label={label}
+        title={label}
+        className={cn(
+          "grid h-8 w-8 place-items-center rounded-full",
+          "bg-black/65 backdrop-blur-sm transition-colors",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80",
+          on && effectiveVolume > 0 ? "text-white" : "text-white/75 hover:text-white",
         )}
-      </svg>
-    </button>
+      >
+        <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" fill="none">
+          <path
+            d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+          {on && effectiveVolume > 0 ? (
+            <path
+              d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.8a7.5 7.5 0 0 1 0 10.4"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          ) : (
+            <path
+              d="M15 8.5l5 7M20 8.5l-5 7"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          )}
+        </svg>
+      </button>
+    </div>
   );
 }

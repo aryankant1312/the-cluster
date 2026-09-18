@@ -11,9 +11,30 @@ export function MyMusicWindow({
   onSelectTrack: (index: number) => void;
   onOpenFolder: (folderId: string) => void;
 }) {
+  /**
+   * FOLDERS FIRST, THEN THE LOOSE TRACKS.
+   *
+   * `myMusicEntries` is authored singles-then-folders, so the four records sat
+   * at the bottom of the grid — below whatever the window's height happened to
+   * cut off — and the window opened on a field of singles with no sign that
+   * the albums they came from were in here too. Every file manager this one is
+   * dressed as puts containers above their contents, and for the same reason:
+   * a folder is a place you might go, a track is a thing you play, and the
+   * places belong at the top.
+   *
+   * Sorted here rather than reordered in `content/tracks.ts`: that array is the
+   * catalogue's own order. `slice()` first, because `sort` mutates and this is
+   * a module-level import. The comparator only distinguishes folder from
+   * track, and `Array.prototype.sort` is stable, so within each group the
+   * authored order survives untouched.
+   */
+  const entries = myMusicEntries
+    .slice()
+    .sort((a, b) => Number(b.type === "folder") - Number(a.type === "folder"));
+
   return (
     <div className="grid grid-cols-3 gap-3 place-items-center py-1">
-      {myMusicEntries.map((entry) => {
+      {entries.map((entry) => {
         if (entry.type === "track") {
           const index = trackIndexById(entry.trackId);
           const t = tracks[index];

@@ -74,6 +74,7 @@ export async function GET(request: Request) {
     path: "/",
     maxAge: STATE_TTL_S,
   };
+  response.cookies.set("cluster_oauth_remember", url.searchParams.get("remember") === "1" ? "1" : "0", options);
   response.cookies.set(GOOGLE_STATE_COOKIE, state, options);
   response.cookies.set(GOOGLE_PERSONA_COOKIE, persona, options);
   if (next) response.cookies.set(GOOGLE_NEXT_COOKIE, next, options);

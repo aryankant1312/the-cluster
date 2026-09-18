@@ -43,6 +43,7 @@ export function AccountMenu({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [error, setError] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -115,8 +116,20 @@ export function AccountMenu({
           </p>
           {/* `break-all` rather than truncate: the address is the only thing
               identifying this account, and half of one is not an identity. */}
+          {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
           <p className="mt-1 break-all font-mono text-[12px] leading-snug">{user.email}</p>
 
+          <button
+            type="button"
+            role="menuitem"
+            className="mt-3 w-full text-left text-sm underline"
+            onClick={() => {
+              setOpen(false);
+              router.push(skin === "dev" ? "/dotm" : "/dev");
+            }}
+          >
+            Switch to {skin === "dev" ? "DOTM" : "DEV"}
+          </button>
           {/*
             SIGNING OUT NOW GOES SOMEWHERE, which is the whole of the fix.
 
@@ -150,10 +163,17 @@ export function AccountMenu({
             disabled={leaving}
             onClick={async () => {
               setLeaving(true);
-              // One door. Signing out of DOTM leaves a DEV session alone.
-              await signOut(skin);
-              setOpen(false);
-              router.replace("/choose-face");
+              setError("");
+              try {
+                await signOut(skin);
+                setOpen(false);
+                router.replace("/choose-face");
+                router.refresh();
+              } catch {
+                setError("Could not sign out. Please try again.");
+              } finally {
+                setLeaving(false);
+              }
             }}
             className={cn(
               "mt-3 w-full px-3 py-2 font-chrome text-[12px] uppercase tracking-[0.18em]",

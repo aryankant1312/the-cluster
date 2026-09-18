@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useWindowManager } from "@/components/window-manager/window-manager-context";
-import { StartTrayIcon } from "./icons";
 
 export function StartMenu({ onNavigate }: { onNavigate?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -58,6 +57,7 @@ export function StartMenu({ onNavigate }: { onNavigate?: () => void }) {
     { label: "Book DOTM", id: "book" },
     { label: "Drops", id: "merch" },
     { label: "Cluster Wall", id: "cluster-wall" },
+    { label: "Shows", id: "shows" },
     { label: "Live Stats", id: "stats" },
     { label: "Portfolio", id: "portfolio" },
     { label: "The Vault", id: "vault" },
@@ -66,7 +66,6 @@ export function StartMenu({ onNavigate }: { onNavigate?: () => void }) {
   const items: Array<{ label: string; action: () => void }> = [
     { label: t("home"), action: () => router.push("/dev") },
     { label: t("music"), action: () => wm.openWindow("my-music") },
-    { label: t("shows"), action: () => router.push("/shows") },
     { label: t("contact"), action: () => wm.openWindow("contact") },
   ];
 
@@ -84,7 +83,17 @@ export function StartMenu({ onNavigate }: { onNavigate?: () => void }) {
         aria-haspopup="menu"
         className="win98-border win98-press bg-taskbar px-3 py-1.5 font-chrome text-base tracking-wide flex items-center gap-2"
       >
-        <StartTrayIcon />
+        <span className="relative h-5 w-5 shrink-0">
+          {/* The layout box stays 20px so the larger artwork does not increase
+              the Start button or taskbar height. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/dev/windows-98-start.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 h-7 w-7 max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
+          />
+        </span>
         Start
       </button>
       {open && (

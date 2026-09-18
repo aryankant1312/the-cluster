@@ -1,24 +1,19 @@
 "use client";
 
 import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { usePersona } from "@/components/providers/PersonaProvider";
-import { brandCases } from "@/content/brand-cases";
+import { brandCases, type BrandCase } from "@/content/brand-cases";
 import { pressKit } from "@/content/press-kit";
 import { cn } from "@/lib/utils";
 
 /**
  * The brand conveyor belt: the marks, running past, over the artwork.
  *
- * IT SHOWS AND DOES NOT ASK. Each logo used to be a button opening a mini case
- * study, with a "CASE STUDY" plate rising on hover to say so. All of that is
- * gone — the overlay, the plate, the click, the focus ring, the tab stop. The
- * belt is the message, and the only action left on the screen is the press-kit
- * download.
- *
- * `content/brand-cases.ts` still carries the case-study copy for each brand.
- * It is unread now and deliberately not deleted: it is written, it costs
- * nothing to keep, and reinstating the overlay would otherwise mean writing it
- * all again.
+ * Hovering or keyboard focus pauses the belt. Each mark opens a folder-backed
+ * campaign viewer whose mosaic is derived from the media currently present,
+ * so adding an asset requires only a file copy and reload.
  */
 
 // Duplicated once back-to-back so the CSS scroll loop is seamless.
@@ -63,6 +58,12 @@ const PRESS_KIT_PDF = pressKit.downloads.find((d) => d.id === "full" && d.availa
 const BELT_TOP = 0.71;
 const BELT_HEIGHT = 0.22;
 
+interface BrandMediaAsset {
+  name: string;
+  src: string;
+  type: "image" | "video";
+}
+
 /**
  * THE DEV BACKDROP NO LONGER ZOOMS OUT, AND THE FILE CHANGE IS WHY.
  *
@@ -86,6 +87,39 @@ const BELT_HEIGHT = 0.22;
 export function BrandUniverse() {
   const { persona } = usePersona();
   const isDotm = persona === "dotm";
+  const [selected, setSelected] = useState<BrandCase | null>(null);
+  const [assets, setAssets] = useState<BrandMediaAsset[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [beltHovered, setBeltHovered] = useState(false);
+  const [beltFocused, setBeltFocused] = useState(false);
+  const requestRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => requestRef.current?.abort(), []);
+
+  const openCampaign = async (brand: BrandCase) => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setSelected(brand);
+    setAssets([]);
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/brand-media/${brand.id}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`Brand media request failed: ${response.status}`);
+      const body = (await response.json()) as { assets?: BrandMediaAsset[] };
+      setAssets(Array.isArray(body.assets) ? body.assets : []);
+    } catch (error) {
+      if ((error as Error).name !== "AbortError") setAssets([]);
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
+  };
+
+  const beltPaused = beltHovered || beltFocused || selected !== null;
 
   return (
     <div
@@ -130,7 +164,11 @@ export function BrandUniverse() {
           Overwrite this file and the same trap returns; add a new name
           instead, or clear `.next/cache/images`.
         */
-        src={isDotm ? "/images/dotm/portfolio-bg.jpg" : "/images/dev/portfolio-backdrop-2.jpg"}
+        src={
+          isDotm
+            ? "/images/dotm/portfolio-bg-blue-coat.jpg"
+            : "/images/dev/portfolio-backdrop-2.jpg"
+        }
         alt=""
         aria-hidden="true"
         fill
@@ -169,7 +207,7 @@ export function BrandUniverse() {
             in the window. Centring the heading inside a flex row with the
             button as a sibling would have centred it in the space *left over*
             by the button, which is not the middle of anything. */}
-        <div className="relative shrink-0 text-center">
+        <div className={cn("relative shrink-0", isDotm ? "text-right" : "text-center")}>
           {isDotm ? (
             <>
               {/*
@@ -181,23 +219,23 @@ export function BrandUniverse() {
                 surrounding 45% grey give it somewhere to be loud, and "bled"
                 keeps the accent to itself.
               */}
-              <p className="font-headline text-[clamp(1.75rem,3.6vw,3.15rem)] font-bold leading-[1.05] tracking-[0.01em] text-white [text-shadow:0_2px_20px_rgba(0,0,0,0.85)]">
-                The Brands I&apos;ve{" "}
-                <span className="text-[#ff0033] [text-shadow:0_0_26px_rgba(255,0,51,0.6)]">
-                  bled
-                </span>{" "}
-                for
+              <p
+                aria-label="The brands I've bled for"
+                className="ml-auto font-sans text-[clamp(1.65rem,3.4vw,3.6rem)] font-black uppercase leading-[0.84] tracking-[-0.03em] text-white [text-shadow:0_2px_20px_rgba(0,0,0,0.85)]"
+              >
+                <span aria-hidden="true" className="block">THE BRANDS</span>
+                <span aria-hidden="true" className="block">I&apos;VE <span className="text-[#ff2244]">BLED</span></span>
+                <span aria-hidden="true" className="block">FOR</span>
               </p>
-              <div className="mx-auto mt-3.5 h-[2px] w-20 bg-gradient-to-r from-transparent via-[#ff0033] to-transparent" />
+              <div className="ml-auto mt-3.5 h-[3px] w-28 bg-[#ff2244]" />
             </>
           ) : (
             <p className="font-chrome text-xl tracking-wide text-black [text-shadow:0_1px_10px_rgba(255,255,255,0.9)] sm:text-2xl">
               The Brands I have worked with...
             </p>
           )}
-          {/* The "Select a brand to open the case study" line is gone, and so
-              is the thing it described: the tiles no longer open anything, so
-              an instruction to click them would have been a lie. */}
+          {/* The belt itself carries the affordance on hover/focus, so a second
+              instruction line would compete with the campaign viewer. */}
 
           {/* Same line, far left, in both personas. The download used to sit
               centred under DEV's heading — a second piece of centred type
@@ -210,6 +248,19 @@ export function BrandUniverse() {
             className="absolute left-0 top-1/2 mt-0 -translate-y-1/2"
           />
         </div>
+
+        <AnimatePresence mode="wait">
+          {selected && (
+            <CampaignViewer
+              key={selected.id}
+              brand={selected}
+              assets={assets}
+              loading={loading}
+              isDotm={isDotm}
+              onClose={() => setSelected(null)}
+            />
+          )}
+        </AnimatePresence>
 
         {/* THE BELT.
             DEV centres it in whatever height is left under the heading. DOTM
@@ -226,27 +277,27 @@ export function BrandUniverse() {
             height: `${BELT_HEIGHT * 100}%`,
           }}
         >
-          <div className="h-full w-full overflow-hidden">
-            <div className="portfolio-belt-track flex h-full items-center gap-9">
-              {/*
-                A LIST OF PICTURES, NOT A ROW OF BUTTONS.
-
-                Each of these was a `<button>` that opened a case-study
-                overlay, with a "CASE STUDY" plate rising on hover to advertise
-                it. Both are gone, along with the overlay itself: the belt is
-                the whole of what this window says, and the only action on the
-                screen is the press-kit download.
-
-                So they are plain elements now — no `onClick`, no `tabIndex`,
-                no focus ring, nothing in the tab order. A div that looks
-                pressable and is not would be worse than the button was; what
-                is left does not look pressable, because nothing about it
-                responds. `alt` on each mark still names the brand, which is
-                the only thing a reader needed from them.
-              */}
+          <div
+            className="h-full w-full overflow-hidden"
+            onMouseEnter={() => setBeltHovered(true)}
+            onMouseLeave={() => setBeltHovered(false)}
+            onFocusCapture={() => setBeltFocused(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setBeltFocused(false);
+            }}
+          >
+            <div
+              className="portfolio-belt-track flex h-full items-center gap-9"
+              style={{ animationPlayState: beltPaused ? "paused" : "running" }}
+            >
+              {/* Repeated buttons keep the seamless visual loop, while every
+                  copy opens the same campaign by stable brand id. */}
               {BELT.map((brand, i) => (
-                <div
+                <button
+                  type="button"
                   key={`${brand.id}-${i}`}
+                  onClick={() => void openCampaign(brand)}
+                  aria-label={`Open ${brand.name}: ${brand.campaign}`}
                   // NO EDGE, AND ONE COLOUR. The tiles carried a hairline ring
                   // on DOTM and a bevelled Win98 border on DEV, plus each
                   // brand's own `bg` — so the belt read as a row of framed
@@ -254,7 +305,7 @@ export function BrandUniverse() {
                   // of marks. Flat black under every one of them, with nothing
                   // drawn around it, lets the logos be the only thing with a
                   // shape.
-                  className="relative aspect-[3/2] h-full shrink-0 overflow-hidden bg-black"
+                  className="group/brand relative aspect-[3/2] h-full shrink-0 cursor-pointer overflow-hidden bg-black text-left outline-none transition-transform duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:ring-2 focus-visible:ring-[#ff2244] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                 >
                   {/*
                     A soft wash from the tile's own colour, so a card whose
@@ -270,6 +321,9 @@ export function BrandUniverse() {
                         "radial-gradient(120% 90% at 50% 40%, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 55%)",
                     }}
                   />
+                  <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 translate-y-full bg-gradient-to-t from-black/95 to-transparent px-4 pb-3 pt-10 font-chrome text-[10px] uppercase tracking-[0.22em] text-white transition-transform duration-300 group-hover/brand:translate-y-0 group-focus-visible/brand:translate-y-0">
+                    View campaign
+                  </span>
                   {/*
                     Sized by `fit` rather than by a fixed inset: the marks run
                     from a 1:1 disc to a 5.6:1 hairline wordmark, and a single
@@ -289,7 +343,7 @@ export function BrandUniverse() {
                       quality={95}
                     />
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -297,6 +351,274 @@ export function BrandUniverse() {
       </div>
 
     </div>
+  );
+}
+
+function CampaignViewer({
+  brand,
+  assets,
+  loading,
+  isDotm,
+  onClose,
+}: {
+  brand: BrandCase;
+  assets: BrandMediaAsset[];
+  loading: boolean;
+  isDotm: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, scale: 0.94, y: 18 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96, y: 10 }}
+      transition={{ type: "spring", stiffness: 330, damping: 28 }}
+      onPointerDown={(event) => event.stopPropagation()}
+      aria-label={`${brand.name} campaign media`}
+      className={cn(
+        "absolute z-20 flex min-h-0 flex-col overflow-hidden border border-white/20 text-white",
+        "shadow-[0_28px_80px_-22px_rgba(0,0,0,0.88),inset_0_0_0_1px_rgba(255,255,255,0.08)] backdrop-blur-2xl",
+        isDotm ? "rounded-[24px]" : "rounded-[12px]",
+      )}
+      style={{
+        top: isDotm ? "9%" : "11%",
+        left: 0,
+        right: 0,
+        width: isDotm ? "54%" : "62%",
+        maxWidth: isDotm ? "1040px" : "820px",
+        height: isDotm ? "58%" : "56%",
+        marginLeft: "auto",
+        marginRight: "auto",
+        background:
+          "radial-gradient(circle at 12% 0%, rgba(255,34,68,0.24), transparent 40%), linear-gradient(145deg, rgba(24,7,12,0.66), rgba(8,8,10,0.56) 52%, rgba(36,6,12,0.62))",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.13]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+          maskImage: "linear-gradient(to bottom, black, transparent 72%)",
+        }}
+      />
+
+      <header className="relative z-10 flex shrink-0 items-center gap-4 border-b border-white/10 px-5 py-3 sm:px-6">
+        <div className="min-w-0 flex-1">
+          <p className="font-chrome text-[9px] uppercase tracking-[0.34em] text-[#ff6a80] sm:text-[10px]">
+            {brand.name}
+          </p>
+          <h2 className="truncate font-sans text-xl font-black uppercase leading-none tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">
+            {brand.campaign}
+          </h2>
+        </div>
+        <CommentsButton brand={brand} />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close campaign"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#ff6378] bg-[#d90f2f] text-white shadow-[0_6px_20px_-8px_rgba(255,34,68,0.95)] transition hover:scale-105 hover:bg-[#ff2244] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <svg
+            viewBox="0 0 20 20"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 4l12 12M16 4 4 16" />
+          </svg>
+        </button>
+      </header>
+
+      <div className="relative z-10 min-h-0 flex-1 p-3 sm:p-4">
+        {loading ? (
+          <div className="flex h-full items-center justify-center">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-[#ff2244]" />
+            <span className="sr-only">Loading campaign media</span>
+          </div>
+        ) : assets.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center border border-dashed border-white/20 bg-black/20 px-6 text-center">
+            <p className="font-headline text-lg uppercase tracking-[0.16em] text-white">Media ready</p>
+            <p className="mt-2 max-w-lg font-body text-xs leading-relaxed text-white/55 sm:text-sm">
+              Add images or looping videos to
+              <span className="mx-1 font-chrome text-[#ff6a80]">public/brand-campaigns/{brand.id}</span>
+              and reload.
+            </p>
+          </div>
+        ) : (
+          <MediaMosaic assets={assets} />
+        )}
+      </div>
+    </motion.section>
+  );
+}
+
+function CommentsButton({ brand }: { brand: BrandCase }) {
+  const classes =
+    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 font-chrome text-[9px] uppercase tracking-[0.17em] transition sm:text-[10px]";
+
+  if (!brand.socialUrl) {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-label="Check comments link pending"
+        className={cn(classes, "cursor-not-allowed border-white/10 bg-white/5 text-white/35")}
+      >
+        Check comments <ExternalArrow />
+      </button>
+    );
+  }
+
+  return (
+    <a
+      href={brand.socialUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        classes,
+        "border-[#ff2244]/70 bg-[#ff2244] text-white shadow-[0_8px_24px_-12px_rgba(255,34,68,0.9)] hover:bg-white hover:text-black",
+      )}
+    >
+      Check comments <ExternalArrow />
+    </a>
+  );
+}
+
+function MediaMosaic({ assets }: { assets: BrandMediaAsset[] }) {
+  const count = assets.length;
+  const gridClass =
+    count === 1
+      ? "grid-cols-1 grid-rows-1"
+      : count === 2
+        ? "grid-cols-2 grid-rows-1"
+        : count === 3
+          ? "grid-cols-2 grid-rows-2"
+          : count === 4
+            ? "grid-cols-2 grid-rows-2"
+            : "grid-cols-3 grid-rows-2 overflow-y-auto";
+
+  return (
+    <div className={cn("grid h-full min-h-0 gap-2", gridClass)}>
+      {assets.map((asset, index) => {
+        const feature = (count === 3 || count >= 5) && index === 0;
+        return (
+          <figure
+            key={asset.src}
+            className={cn(
+              "group/media relative min-h-0 overflow-hidden border border-white/10 bg-black/25",
+              feature && "row-span-2",
+              count >= 5 && feature && "col-span-1",
+            )}
+          >
+            {asset.type === "video" ? (
+              <CampaignVideo asset={asset} />
+            ) : (
+              <Image
+                src={asset.src}
+                alt={asset.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")}
+                fill
+                unoptimized
+                sizes="(min-width: 1024px) 48vw, 80vw"
+                className="object-cover transition-transform duration-700 group-hover/media:scale-[1.025]"
+              />
+            )}
+            <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 z-20 truncate bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-8 font-chrome text-[8px] uppercase tracking-[0.16em] text-white/55 opacity-0 transition-opacity group-hover/media:opacity-100">
+              {asset.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")}
+            </figcaption>
+          </figure>
+        );
+      })}
+    </div>
+  );
+}
+
+function CampaignVideo({ asset }: { asset: BrandMediaAsset }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
+  const [volume, setVolume] = useState(0.7);
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    if (videoRef.current) videoRef.current.muted = next;
+  };
+
+  const setVideoVolume = (next: number) => {
+    setVolume(next);
+    setMuted(next === 0);
+    if (videoRef.current) {
+      videoRef.current.volume = next;
+      videoRef.current.muted = next === 0;
+    }
+  };
+
+  return (
+    <>
+      <video
+        ref={videoRef}
+        autoPlay
+        loop
+        muted={muted}
+        playsInline
+        preload="metadata"
+        className="mx-auto block h-full w-auto max-w-full object-contain"
+        aria-label={asset.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")}
+      >
+        <source src={asset.src} />
+      </video>
+      <div className="absolute bottom-2 right-2 z-30 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-2.5 py-1.5 opacity-80 backdrop-blur-md transition-opacity hover:opacity-100 focus-within:opacity-100">
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={muted ? "Unmute video" : "Mute video"}
+          className="flex h-5 w-5 items-center justify-center text-white"
+        >
+          {muted ? <MutedGlyph /> : <SpeakerGlyph />}
+        </button>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value={muted ? 0 : volume}
+          onChange={(event) => setVideoVolume(Number(event.target.value))}
+          aria-label="Video volume"
+          className="h-1 w-16 cursor-pointer accent-[#ff2244] sm:w-20"
+        />
+      </div>
+    </>
+  );
+}
+
+function ExternalArrow() {
+  return (
+    <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M6 3h7v7M13 3 5 11" />
+      <path d="M11 9v4H3V5h4" />
+    </svg>
+  );
+}
+
+function SpeakerGlyph() {
+  return (
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M3 8h3l4-3v10l-4-3H3z" />
+      <path d="M13 7c1.6 1.6 1.6 4.4 0 6M15.5 4.5c3 3 3 8 0 11" />
+    </svg>
+  );
+}
+
+function MutedGlyph() {
+  return (
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M3 8h3l4-3v10l-4-3H3zM13 8l4 4M17 8l-4 4" />
+    </svg>
   );
 }
 

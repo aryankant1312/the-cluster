@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { type StaticImageData } from "next/image";
-import { motion } from "framer-motion";
+import { motion, useDragControls } from "framer-motion";
 import { useWindowManager } from "./window-manager-context";
 import {
   BOTTOM_BAR_SAFE_AREA,
@@ -92,6 +92,7 @@ export function DevWindow({
 }) {
   const wm = useWindowManager();
   const shellRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
   const [bounds, setBounds] = useState<ReturnType<typeof desktopDragBounds>>(undefined);
@@ -116,6 +117,7 @@ export function DevWindow({
 
   const filled = effective === "fill";
   const isFullscreen = effective === "fullscreen";
+  const movable = !filled && !isFullscreen;
   const shellWidth = filled || isFullscreen ? undefined : width;
   const shellHeight = filled
     ? `calc(100vh - ${topInset + BOTTOM_BAR_SAFE_AREA}px)`
@@ -131,6 +133,14 @@ export function DevWindow({
   const isOpen = wm.isOpen(id) && !minimized;
   /** Minimized-but-alive: rendered, inert, and invisible. See `keepMounted`. */
   const parked = keepMounted && wm.isOpen(id) && minimized;
+
+  useEffect(() => {
+    if (!isOpen || !movable) return;
+    const measure = () => setBounds(desktopDragBounds(shellRef.current));
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [isOpen, movable]);
 
   // Declared before the early return for the same reason the hooks are: the
   // Escape listener below closes over it.
@@ -182,9 +192,9 @@ export function DevWindow({
    */
   const { setChromeHidden } = wm;
   useEffect(() => {
-    setChromeHidden(id, isFullscreen && isOpen);
+    setChromeHidden(id, (isFullscreen || overTopBar) && isOpen);
     return () => setChromeHidden(id, false);
-  }, [id, isFullscreen, isOpen, setChromeHidden]);
+  }, [id, isFullscreen, isOpen, overTopBar, setChromeHidden]);
 
   if (!isOpen && !parked) return null;
 
@@ -193,10 +203,11 @@ export function DevWindow({
       ref={shellRef}
       // A filled window has nowhere to be dragged to; letting it move only
       // lets the visitor push its own titlebar off screen.
-      drag={!filled && !isFullscreen}
+      drag={movable}
+      dragListener={false}
+      dragControls={dragControls}
       dragMomentum={false}
       dragConstraints={bounds}
-      onDragStart={() => setBounds(desktopDragBounds(shellRef.current))}
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{
         opacity: closing ? 0 : 1,
@@ -288,11 +299,21 @@ export function DevWindow({
       }}
       className="win98-border bg-persona-surface flex flex-col"
     >
-      <div className="bg-persona-titlebar text-white flex cursor-move items-center justify-between px-1.5 py-1 select-none">
+      <div
+        className="bg-persona-titlebar text-white flex cursor-move items-center justify-between px-1.5 py-1 select-none"
+        onPointerDown={(event) => {
+          if (!movable) return;
+          setBounds(desktopDragBounds(shellRef.current));
+          dragControls.start(event);
+        }}
+      >
         <span className={cn("font-chrome tracking-wide truncate", titleClassName ?? "text-sm")}>
           {title}
         </span>
-        <div className="flex items-center gap-1">
+        <div
+          className="flex items-center gap-1"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
           <button
             type="button"
             className="win98-border w-5 h-5 flex items-center justify-center text-black bg-persona-surface text-xs leading-none hover:bg-danger hover:text-white"

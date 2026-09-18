@@ -270,7 +270,7 @@ export function FaultyTerminalBackground({
   const frozenTimeRef = useRef(0);
   const rafRef = useRef<number>(0);
   const loadAnimationStartRef = useRef<number>(0);
-  const timeOffsetRef = useRef<number>(Math.random() * 100);
+  const timeOffsetRef = useRef<number>(0);
   const programRef = useRef<Program | null>(null);
 
   const tintVec = useMemo(() => hexToRgb(tint), [tint]);
@@ -304,6 +304,7 @@ export function FaultyTerminalBackground({
   useEffect(() => {
     const ctn = containerRef.current;
     if (!ctn) return;
+    timeOffsetRef.current = Math.random() * 100;
 
     const renderer = new Renderer({ dpr });
     const gl = renderer.gl;

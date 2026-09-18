@@ -12,9 +12,12 @@ export function useClock(): string {
         hour: "2-digit",
         minute: "2-digit",
       });
-    setTime(format());
+    const initial = setTimeout(() => setTime(format()), 0);
     const interval = setInterval(() => setTime(format()), 1000 * 30);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
   }, []);
 
   return time ?? "";

@@ -483,16 +483,6 @@ export default function DevBootPage() {
               background: "linear-gradient(180deg, #245edb 0%, #3f8cf3 45%, #4db6e8 100%)",
             }}
           >
-            {/* The key, top right.
-                Mounted with the login screen rather than on a timer of its
-                own: `loginVisible` turns true as the eyelids start to open, so
-                the tile is already in place by the time there is anything to
-                see. Its nudge is what waits — long enough for the dots to
-                finish typing themselves, so the two do not compete. */}
-            {phase === "login" && !user && (
-              <SignInIcon skin="dev" onSignedIn={finish} nudgeDelayMs={1800} />
-            )}
-
             {/* A shallow focus pull as the eye opens: what you are looking at
                 settles into place rather than simply being there. */}
             <motion.div
@@ -503,11 +493,11 @@ export default function DevBootPage() {
             >
               <div className="relative h-40 w-40 border-2 border-white/70 shadow-[0_4px_16px_rgba(0,0,0,0.35)]">
                 <Image
-                  src="/images/dev/login-user.png"
+                  src="/images/dev/login-user-profile.jpg"
                   alt="User"
                   fill
                   priority
-                  className="object-cover"
+                  className="object-cover object-center"
                   sizes="160px"
                 />
               </div>
@@ -542,12 +532,21 @@ export default function DevBootPage() {
                     type="button"
                     onClick={finish}
                     disabled={!user}
-                    title={user ? "Confirm" : "Sign in first — the key is top right"}
+                    title={user ? "Confirm" : "Sign in below"}
                     className="win98-border win98-press bg-persona-surface px-4 font-chrome text-base text-black active:translate-y-px disabled:cursor-not-allowed disabled:text-black/35 disabled:active:translate-y-0"
                   >
                     Confirm
                   </button>
                 </div>
+                {phase === "login" && !user && (
+                  <SignInIcon
+                    skin="dev"
+                    placement="inline"
+                    onSignedIn={finish}
+                    nudgeDelayMs={1800}
+                    className="self-center"
+                  />
+                )}
               </div>
             </motion.div>
           </motion.div>

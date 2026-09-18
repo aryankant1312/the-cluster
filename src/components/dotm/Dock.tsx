@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useWindowManager } from "@/components/window-manager/window-manager-context";
-import { useClock } from "@/hooks/use-clock";
+import { dotmPlayer, useDotmPlayer } from "@/lib/dotm-player";
+import { trackArtwork, tracks } from "@/content/tracks";
 import { MagnificationDock, type DockItemData } from "./MagnificationDock";
 import {
   DotmTile,
@@ -15,7 +17,6 @@ import {
   ShowsTile,
   DropsTile,
   StatsTile,
-  WelcomeTile,
 } from "./dock-tiles";
 
 /**
@@ -30,9 +31,19 @@ import {
  * came to do, then the deeper material. Outbound links live in the tray, not
  * here; see `DockTray`.
  */
+/**
+ * The tray clock, frozen.
+ *
+ * It used to be `useClock()` — the real time in Asia/Kolkata, ticking every
+ * thirty seconds. DOTM's desktop is a set rather than a machine, and the hour
+ * on it is part of the set dressing, so it is written down here. DEV's taskbar
+ * still runs the live clock; the two desktops are allowed to disagree, because
+ * only one of them is pretending to be a computer.
+ */
+const DOTM_CLOCK = "8:48 PM";
+
 export function Dock() {
   const wm = useWindowManager();
-  const clock = useClock();
   const open = (id: string) => () => wm.openWindow(id);
 
   /**
@@ -51,7 +62,6 @@ export function Dock() {
     { icon: <DropsTile />, label: "Drops", onClick: open("merch") },
     { icon: <StatsTile />, label: "Live Stats", onClick: open("stats"), bare: true },
     { icon: <PortfolioTile />, label: "Portfolio", onClick: open("portfolio") },
-    { icon: <WelcomeTile />, label: "The Story", onClick: open("welcome") },
     { icon: <ContactTile />, label: "Contact", onClick: open("contact"), bare: true },
     { icon: <NotesTile />, label: "Notes", onClick: open("notes") },
   ];
@@ -66,6 +76,24 @@ export function Dock() {
    * the chrome always keeps its own way out on screen.
    */
   if (wm.chromeHidden) return null;
+
+  /**
+   * OUT OF THE WAY WHILE A WINDOW IS OPEN.
+   *
+   * The bar is how you get *into* something; once you are in it, it is a strip
+   * of chrome sitting over the thing you opened it to look at. So the whole
+   * bottom row — dock, tray and transport pill — stands down as soon as a
+   * window is on screen, and comes back the moment the last one is closed or
+   * minimized.
+   *
+   * MINIMIZED WINDOWS DO NOT COUNT, which is the load-bearing half: a
+   * minimized window has handed the desktop back, and a bar that stayed hidden
+   * for one would take the only way of getting it back with it. Same rule the
+   * window manager already uses to decide how much stands between the visitor
+   * and the desktop — see `publishOpenWindowCount`.
+   */
+  const windowOnScreen = wm.openIds.some((id) => !wm.isMinimized(id));
+  if (windowOnScreen) return null;
 
   return (
     <>
@@ -87,8 +115,103 @@ export function Dock() {
         </div>
       </div>
 
-      <DockTray onOpenMusic={open("music-player")} clock={clock} />
+      <MiniPlayerTray onOpenMusic={open("music-player")} />
+      <DockTray onOpenMusic={open("music-player")} />
     </>
+  );
+}
+
+/* ── The transport pill ─────────────────────────────────────────────────── */
+
+/**
+ * WHAT IS PLAYING, AND THE THREE BUTTONS THAT CHANGE IT.
+ *
+ * Directly above the tray, in the tray's own pill: same glass, same radius,
+ * same 32px keys at the same 17px optical weight, so the corner reads as one
+ * stack of two rows rather than as a widget parked next to a taskbar. The
+ * offset below it is the tray's own height plus a hairline of air — the tray
+ * sits at `bottom-4` and stands 44px tall (32px keys inside 6px of padding),
+ * so 68px puts this one 8px clear of its top edge.
+ *
+ * WHY IT EXISTS. The record player is a fullscreen-ish window, and the only
+ * way to change track was to go back into it. Skipping a record is a two-second
+ * intention and it was costing a window open, a click and a window close.
+ *
+ * IT WORKS WITH THE WINDOW SHUT, WITH ONE HONEST LIMIT. While the Music window
+ * is mounted — open, or minimized, which keeps it mounted — these three drive
+ * the real `<audio>` through `dotmPlayer`. With the window closed there is no
+ * element and nothing is playing, so pressing any of them records the intent
+ * and opens the window on that record, playing. See `lib/dotm-player.ts`.
+ */
+function MiniPlayerTray({ onOpenMusic }: { onOpenMusic: () => void }) {
+  const { index, playing, live } = useDotmPlayer();
+  const track = tracks[index] ?? tracks[0];
+  if (!track) return null;
+
+  const art = trackArtwork(track);
+  const title = track.title.replace(/\.mp3$/i, "");
+
+  /** Every key here opens the window when there is nothing to drive. */
+  const drive = (handled: boolean) => {
+    if (!handled) onOpenMusic();
+  };
+
+  return (
+    <div className="pointer-events-none fixed bottom-[68px] right-4 z-[200] flex items-center">
+      <div
+        data-desktop-obstacle
+        className="macos-glass pointer-events-auto flex items-center gap-1 rounded-full py-1.5 pl-1.5 pr-2.5 shadow-[0_10px_28px_-12px_rgba(0,0,0,0.75)]"
+      >
+        {/* The sleeve doubles as the way back into the window it came from —
+            the one control here that is not a transport key, which is why it
+            is square-ish and rounded rather than a circular key. */}
+        <button
+          type="button"
+          onClick={onOpenMusic}
+          aria-label={`Open Music — ${title}`}
+          title={title}
+          className="relative h-8 w-8 shrink-0 overflow-hidden rounded-[9px] ring-1 ring-white/20 outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-white/70"
+        >
+          <Image src={art} alt="" fill sizes="32px" className="object-cover" />
+        </button>
+
+        {/* Truncated hard. A pill in the corner is a label, not a marquee, and
+            a title allowed to set its own width would push the row past the
+            tray beneath it and break the stack. */}
+        <span className="ml-1 mr-0.5 max-w-[110px] truncate font-chrome text-[11px] tracking-wide text-white/85">
+          {title}
+        </span>
+
+        <span aria-hidden="true" className="mx-1 h-4 w-px bg-white/20" />
+
+        <TrayButton
+          label="Previous"
+          accent="#ffffff"
+          onClick={() => drive(dotmPlayer.step(-1, tracks.length))}
+        >
+          <PreviousMark />
+        </TrayButton>
+
+        {/* The one key whose glyph carries state. `live` is what decides which
+            glyph is honest: with the window shut nothing is running, so this
+            reads play even if the wheel was mid-record when it was closed. */}
+        <TrayButton
+          label={live && playing ? "Pause" : "Play"}
+          accent="#ff0033"
+          onClick={() => drive(dotmPlayer.toggle())}
+        >
+          {live && playing ? <PauseMark /> : <PlayMark />}
+        </TrayButton>
+
+        <TrayButton
+          label="Next"
+          accent="#ffffff"
+          onClick={() => drive(dotmPlayer.step(1, tracks.length))}
+        >
+          <NextMark />
+        </TrayButton>
+      </div>
+    </div>
   );
 }
 
@@ -140,7 +263,7 @@ const SOCIALS: Array<{
   },
 ];
 
-function DockTray({ onOpenMusic, clock }: { onOpenMusic: () => void; clock: string }) {
+function DockTray({ onOpenMusic }: { onOpenMusic: () => void }) {
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-[200] flex items-center">
       {/* The other half of the bottom bar, and the other place a dragged coin
@@ -169,7 +292,7 @@ function DockTray({ onOpenMusic, clock }: { onOpenMusic: () => void; clock: stri
         <span aria-hidden="true" className="mx-1 h-4 w-px bg-white/20" />
 
         <time className="font-chrome text-[13px] tabular-nums tracking-wide text-white/90">
-          {clock}
+          {DOTM_CLOCK}
         </time>
 
         {/* The avatar used to sit here, past the clock. It has moved to the
@@ -311,6 +434,54 @@ function YouTubeMark() {
   return (
     <svg viewBox="0 0 24 24" width={MARK} height={MARK} fill="currentColor" aria-hidden="true">
       <path d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10.1 14.9V9.1l5.05 2.9-5.05 2.9Z" />
+    </svg>
+  );
+}
+
+/* The transport set, drawn to the same 17px box as the four above so the two
+   rows of the corner stack read as one family. Solid fills rather than strokes:
+   at this size a 1.5px outlined triangle is a smudge. */
+
+function PlayMark() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={MARK}
+      height={MARK}
+      fill="currentColor"
+      aria-hidden="true"
+      /* Optical centring. A triangle's visual mass sits behind its point, so a
+         geometrically centred one looks a pixel left of centre in a circle. */
+      className="translate-x-[1px]"
+    >
+      <path d="M8 5.2v13.6L19 12 8 5.2Z" />
+    </svg>
+  );
+}
+
+function PauseMark() {
+  return (
+    <svg viewBox="0 0 24 24" width={MARK} height={MARK} fill="currentColor" aria-hidden="true">
+      <rect x="7" y="5" width="3.8" height="14" rx="1" />
+      <rect x="13.2" y="5" width="3.8" height="14" rx="1" />
+    </svg>
+  );
+}
+
+function PreviousMark() {
+  return (
+    <svg viewBox="0 0 24 24" width={MARK} height={MARK} fill="currentColor" aria-hidden="true">
+      <rect x="5.4" y="5.4" width="2.6" height="13.2" rx="1" />
+      <path d="M19.4 5.6v12.8L9.6 12 19.4 5.6Z" />
+    </svg>
+  );
+}
+
+function NextMark() {
+  return (
+    <svg viewBox="0 0 24 24" width={MARK} height={MARK} fill="currentColor" aria-hidden="true">
+      <rect x="16" y="5.4" width="2.6" height="13.2" rx="1" />
+      <path d="M4.6 5.6v12.8L14.4 12 4.6 5.6Z" />
     </svg>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useWindowManager } from "@/components/window-manager/window-manager-context";
 
 interface StickyNote {
   id: string;
@@ -9,8 +10,9 @@ interface StickyNote {
   y: number;
 }
 
-export function NotesApp({ onPost }: { onPost: (note: StickyNote) => void }) {
+export function NotesApp({ onPost }: { onPost: (note: StickyNote) => boolean }) {
   const [text, setText] = useState("");
+  const wm = useWindowManager();
 
   const post = () => {
     if (!text.trim()) return;
@@ -20,15 +22,15 @@ export function NotesApp({ onPost }: { onPost: (note: StickyNote) => void }) {
       x: 20 + Math.random() * 60,
       y: 20 + Math.random() * 40,
     };
-    const existing = JSON.parse(window.sessionStorage.getItem("stickyNotes") ?? "[]");
-    window.sessionStorage.setItem("stickyNotes", JSON.stringify([...existing, note]));
-    onPost(note);
+    if (!onPost(note)) return;
     setText("");
+    wm.closeWindow("notes");
   };
 
   return (
     // Reading surface. See `.long-text` in globals.css.
     <div className="long-text">
+      <p className="mb-2 text-xs opacity-70">Saved for your account in this browser.</p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

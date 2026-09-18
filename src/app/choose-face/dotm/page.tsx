@@ -183,7 +183,7 @@ const HEADLINE_GUTTER = 12;
  * right for the same reason: long enough to have read the line twice, short
  * enough that nobody wonders whether the page has stopped.
  */
-const LINE_MS = 4000;
+const OPENING_VIDEO_FALLBACK_MS = 5000;
 
 /** The loader. Long enough to register as a beat, short enough not to nag. */
 const LOADER_MS = 2500;
@@ -373,6 +373,10 @@ export default function DotmEntryPage() {
   const [phase, setPhase] = useState<Phase>("line");
   const [password, setPassword] = useState("");
 
+  const finishOpeningFilm = useCallback(() => {
+    setPhase((current) => (current === "line" ? "blink" : current));
+  }, []);
+
   /**
    * THE SESSION IS THE WHOLE GATE NOW. See the matching note on the DEV door.
    *
@@ -443,7 +447,7 @@ export default function DotmEntryPage() {
    */
   useEffect(() => {
     if (phase === "line") {
-      const t = setTimeout(() => setPhase("blink"), reduced ? 1200 : LINE_MS);
+      const t = setTimeout(finishOpeningFilm, OPENING_VIDEO_FALLBACK_MS);
       return () => clearTimeout(t);
     }
     if (phase === "blink") {
@@ -454,7 +458,7 @@ export default function DotmEntryPage() {
       const t = setTimeout(() => setPhase("den"), reduced ? 900 : LOADER_MS);
       return () => clearTimeout(t);
     }
-  }, [phase, reduced]);
+  }, [phase, reduced, finishOpeningFilm]);
 
   /**
    * The password types itself once the DEN is on screen.
@@ -565,12 +569,65 @@ export default function DotmEntryPage() {
           <div
             className="absolute inset-0 flex items-center justify-center px-3"
           >
+            {/*
+              THE ROOM THE LINE IS SAID IN.
+
+              This screen was a flat black rectangle with a red bloom on it.
+              The photograph is a DOTM crowd — phones up, three stage lights
+              behind — and it is on screen untouched: no grade, no filter, no
+              tint. Whatever legibility the type needs it takes from the bloom
+              below and from its own glow, not from dimming the picture.
+
+              HOW IT FITS. The frame is 3:2 and the door is whatever shape the
+              window happens to be, so `object-cover` fills the screen and crops
+              rather than letterboxing or stretching — the shot's orientation is
+              never touched. `object-position` is pulled below centre: the three
+              lights sit about a fifth of the way down the frame, and lifting
+              the crop that way keeps them clear of the headline's band instead
+              of putting the brightest part of the picture directly behind white
+              type.
+
+              `priority`, because this is the first and only thing on the first
+              screen of the sequence — lazily fetched, it would show black for
+              about as long as the phase lasts.
+            */}
+            <Image
+              src="/images/dotm/door-crowd.jpg"
+              alt=""
+              aria-hidden="true"
+              fill
+              priority
+              sizes="100vw"
+              className="pointer-events-none z-0 object-cover"
+              style={{ objectPosition: "50% 62%" }}
+            />
+
+            {/* The supplied film is authored on black. Screen blending makes
+                those black pixels transparent, so the crowd photograph is
+                the first loaded layer and the film plays cleanly over it.
+                The existing blink starts after one complete pass. */}
+            <video
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              onEnded={finishOpeningFilm}
+              onError={finishOpeningFilm}
+              aria-label="We made Cluster bigger than the music"
+              className="pointer-events-none absolute inset-0 z-10 h-full w-full object-cover mix-blend-screen"
+            >
+              <source src="/videos/dotm-open.mp4" type="video/mp4" />
+              We made Cluster bigger than the music.
+            </video>
+
             {/* The bloom the intro rings used to supply. A single soft red
                 ellipse behind the type, so the words sit in the persona's
-                light rather than on a flat black rectangle. */}
+                light rather than on a flat black rectangle. It stays, over the
+                photograph: it is what gives the headline a ground to sit on now
+                that there is a picture under it. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
+              className="pointer-events-none absolute inset-0 opacity-0"
               style={{
                 background:
                   "radial-gradient(ellipse 58% 42% at 50% 50%, rgba(180,0,26,0.30) 0%, rgba(120,0,18,0.12) 46%, transparent 74%)",
@@ -609,7 +666,7 @@ export default function DotmEntryPage() {
                  canvases' own fuzz margins instead. Adding a flex gap on top
                  of those margins is what made the two joins around CULTURE
                  look like double spaces. */
-              className="relative flex flex-wrap items-baseline justify-center gap-x-0 gap-y-1"
+              className="invisible relative flex flex-wrap items-baseline justify-center gap-x-0 gap-y-1"
               style={{
                 fontFamily: HEADLINE_FAMILY,
                 filter: "drop-shadow(0 0 22px rgba(255,34,68,0.45))",
@@ -693,7 +750,7 @@ export default function DotmEntryPage() {
             )}
 
             {/* The line, for anyone who cannot watch it arrive. */}
-            <h1 className="sr-only">{LINE}</h1>
+            <h1 className="sr-only">We made Cluster bigger than the music.</h1>
           </div>
         )}
 
@@ -790,10 +847,6 @@ function Den({
        350px tall, so it now centres cleanly down to roughly a 430px-tall
        window instead of 480px. */
     <div className="relative flex h-full flex-col items-center justify-center px-6 py-10">
-      {/* The key, top right — where the seal used to be, and where this
-          persona has always put the way in. */}
-      <SignInIcon skin="dotm" onSignedIn={onSignedIn} nudgeDelayMs={NUDGE_DELAY_MS} />
-
       <div className="flex w-full max-w-[320px] flex-col items-center">
         {/* The photograph, where an app icon would be. Square, and the same
             160px square the DEV door's user tile is — the two doors ask the
@@ -856,11 +909,18 @@ function Den({
           type="button"
           onClick={onContinue}
           disabled={!unlocked}
-          title={unlocked ? "Continue" : "Sign in first — the key is top right"}
+          title={unlocked ? "Continue" : "Sign in below"}
           className="mt-5 h-11 w-full rounded-lg bg-[#c8102e] font-chrome text-sm uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#e11d38] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:bg-[#3a1017] disabled:text-white/35"
         >
           Continue
         </button>
+
+        <SignInIcon
+          skin="dotm"
+          placement="inline"
+          onSignedIn={onSignedIn}
+          nudgeDelayMs={NUDGE_DELAY_MS}
+        />
 
         {/* The line that used to sit here — "Use the key in the corner to sign
             in with Google" — is gone. The key nudges for itself, and the

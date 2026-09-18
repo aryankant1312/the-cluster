@@ -127,7 +127,7 @@ export function proxy(request: NextRequest) {
    */
   const gate = GATED[pathname];
   if (isBrowserNavigation && gate) {
-    return request.cookies.get(gate.cookie)
+    return ["cluster_session", "cluster_session_dev", "cluster_session_dotm"].some(name => request.cookies.has(name))
       ? NextResponse.next()
       : NextResponse.redirect(new URL(gate.door, request.url));
   }

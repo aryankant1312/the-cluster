@@ -41,13 +41,14 @@ export function MusicTile({
   return (
     <button
       type="button"
+      onClick={onOpen}
       onDoubleClick={onOpen}
-      title={`${displayLabel} — double-click to open`}
-      className="group flex w-20 cursor-pointer select-none flex-col items-center gap-1 p-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+      title={`${displayLabel} — click or double-click to open`}
+      className="group flex w-24 cursor-pointer select-none flex-col items-center gap-1.5 p-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
     >
       <div
         className={cn(
-          "relative h-14 w-14 shrink-0 overflow-hidden transition-transform group-active:translate-y-px",
+          "relative h-16 w-16 shrink-0 overflow-hidden transition-transform group-active:translate-y-px",
           isTrack
             ? // Bare artwork. A hairline edge and a drop shadow lift it off
               // the window without implying a surface underneath it.
@@ -62,12 +63,12 @@ export function MusicTile({
           src={icon}
           alt=""
           fill
-          className={isTrack ? "object-cover" : "object-contain"}
-          sizes="56px"
+          className="object-contain"
+          sizes="64px"
         />
       </div>
 
-      <span className="text-center text-[11px] leading-tight text-black group-focus-visible:bg-blue-900 group-focus-visible:text-white">
+      <span className="text-center text-[13.2px] leading-[1.12] text-black group-focus-visible:bg-blue-900 group-focus-visible:text-white">
         {displayLabel}
       </span>
     </button>

@@ -80,7 +80,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    return verifyCode(request, email, String(body.code ?? ""), persona);
+    return verifyCode(request, email, String(body.code ?? ""), persona, body.remember === true);
   }
 
   return NextResponse.json({ ok: false, error: "Unknown action." }, { status: 400 });
@@ -127,6 +127,7 @@ async function verifyCode(
   email: string,
   rawCode: string,
   persona: "dev" | "dotm",
+  remember: boolean,
 ) {
   const code = rawCode.replace(/\D/g, "").slice(0, 6);
   if (code.length !== 6) {
@@ -174,6 +175,7 @@ async function verifyCode(
   await otps.consume(pending.id);
   const user = await users.upsertByEmail({ email });
   const cookie = await createSession(user.id, persona, {
+    remember,
     userAgent: request.headers.get("user-agent") ?? "",
     ipHash: requesterHash(request),
   });
@@ -183,5 +185,7 @@ async function verifyCode(
     user: { id: user.id, email: user.email, name: user.name, picture: user.picture },
   });
   response.cookies.set(cookie.name, cookie.value, sessionCookieOptions(cookie.maxAge));
+  response.cookies.set("cluster_session_dev", "", sessionCookieOptions(0));
+  response.cookies.set("cluster_session_dotm", "", sessionCookieOptions(0));
   return response;
 }

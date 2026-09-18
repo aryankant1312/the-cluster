@@ -8,11 +8,12 @@ import CircleImage, {
 } from "@/components/originkit/ui/hero-04/ring-gallery";
 import { VinylDisc } from "@/components/originkit/ui/hero-04/vinyl-disc";
 import { trackArtwork, trackDurationMs, tracks, type Track } from "@/content/tracks";
-import { findCatalogueTrackById, msToClock } from "@/content/catalogue";
+import { dotmPlayer } from "@/lib/dotm-player";
 import { LyricRail } from "@/components/shared/LyricRail";
 import { PlatformLinkRow } from "@/components/shared/PlatformLinkRow";
 import { getAudioSource } from "@/lib/audio-source";
 import { cn } from "@/lib/utils";
+import { useWindowManager } from "@/components/window-manager/window-manager-context";
 
 /**
  * DOTM's record player — the wheel on the left, the record playing on the
@@ -113,10 +114,29 @@ function useBoxSize<T extends HTMLElement>() {
 
 export function DotmMusicWheel() {
   const reduceMotion = useReducedMotion();
+  const wm = useWindowManager();
+  const minimized = wm.isMinimized("music-player");
   const [paneRef, pane] = useBoxSize<HTMLDivElement>();
 
-  const [index, setIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  /**
+   * Opened on whatever the desktop's transport pill was last showing.
+   *
+   * The pill outlives this window — it sits on the desktop, and pressing play
+   * on it while the window is shut records the intent in `dotmPlayer` and asks
+   * for the window to be opened. Reading the store here is what makes that
+   * arrive as "the record you pressed, playing" rather than as a fresh wheel
+   * back at track one. Both initialisers read the store once, at mount; the
+   * effects below are what keep it in step afterwards.
+   */
+  const [index, setIndex] = useState(() => {
+    const wanted = dotmPlayer.getState().index;
+    return wanted >= 0 && wanted < tracks.length ? wanted : 0;
+  });
+  const [isPlaying, setIsPlaying] = useState(() => {
+    const { index: wanted, playing } = dotmPlayer.getState();
+    const opening = tracks[wanted] ?? tracks[0];
+    return playing && Boolean(getAudioSource(opening));
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -126,7 +146,6 @@ export function DotmMusicWheel() {
 
   const track = tracks[index];
   const src = getAudioSource(track);
-  const meta = track.spotifyId ? findCatalogueTrackById(track.spotifyId) : undefined;
 
   const ringImages = useMemo(
     () =>
@@ -170,6 +189,15 @@ export function DotmMusicWheel() {
     else audio.pause();
   }, [isPlaying, src]);
 
+  // The window remains mounted while minimized. Reassert playback after the
+  // shell enters its parked state so browsers that suspend media during the
+  // visibility change immediately continue from the same currentTime.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!minimized || !isPlaying || !src || !audio) return;
+    void audio.play().catch(() => undefined);
+  }, [minimized, isPlaying, src]);
+
   const select = (next: number) => {
     const wrapped = (next + tracks.length) % tracks.length;
     setIndex(wrapped);
@@ -185,12 +213,64 @@ export function DotmMusicWheel() {
     setIsPlaying((prev) => !prev);
   };
 
+  /**
+   * The desktop pill, kept in step.
+   *
+   * `publish` is the outbound half — what record, running or not — and it is
+   * the only thing the pill reads to draw itself.
+   */
+  useEffect(() => {
+    dotmPlayer.publish({ index, playing: isPlaying });
+  }, [index, isPlaying]);
+
+  /**
+   * And the inbound half: the pill's three buttons, wired to this window's own
+   * transport.
+   *
+   * Registered ONCE, through a ref, rather than re-registered whenever
+   * `select` or `togglePlay` change identity — which is every render. Handing
+   * `attach` a fresh object each time would run its release on every render,
+   * and release reports "nothing is playing any more", so the pill would
+   * strobe between live and dead while the record played on.
+   */
+  const transportRef = useRef({
+    toggle: () => {},
+    next: () => {},
+    previous: () => {},
+  });
+
+  // Refreshed after every render, in an effect rather than in the render body:
+  // a ref written during render is a write to something React does not know it
+  // is rendering, and under concurrent rendering that write can happen for a
+  // pass that is then thrown away.
+  useEffect(() => {
+    transportRef.current = {
+      toggle: togglePlay,
+      next: () => select(index + 1),
+      previous: () => select(index - 1),
+    };
+  });
+
+  useEffect(
+    () =>
+      dotmPlayer.attach({
+        toggle: () => transportRef.current.toggle(),
+        next: () => transportRef.current.next(),
+        previous: () => transportRef.current.previous(),
+      }),
+    [],
+  );
+
   const seekTo = (fraction: number) => {
     const audio = audioRef.current;
-    if (!audio || !src || !duration) return;
-    const time = Math.min(duration, Math.max(0, fraction * duration));
+    if (!audio || !src) return;
+    const seekDuration = duration || (Number.isFinite(audio.duration) ? audio.duration : 0);
+    if (!seekDuration) return;
+    const time = Math.min(seekDuration, Math.max(0, fraction * seekDuration));
     audio.currentTime = time;
     setCurrentTime(time);
+    setIsPlaying(true);
+    void audio.play().catch(() => undefined);
   };
 
   /** Spotify's duration stands in for the seeker's clock until metadata lands. */
@@ -336,8 +416,6 @@ export function DotmMusicWheel() {
       <div className="relative z-10 my-5 mr-5 flex min-w-0 flex-1 flex-col items-center gap-3 rounded-[28px] border border-white/10 bg-white/[0.06] px-6 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_24px_60px_-20px_rgba(0,0,0,0.65)] backdrop-blur-2xl">
         <NowPlaying
           track={track}
-          albumName={meta?.albumName}
-          durationLabel={meta?.durationMs ? msToClock(meta.durationMs) : null}
           // The clock lives here rather than inside the ring: the band
           // between the centre label and the sleeves is exactly wide enough
           // for the seeker and the transport row, and a third element there
@@ -382,7 +460,7 @@ function SeekerRing({
   const circumference = 2 * Math.PI * radius;
 
   /** Click anywhere on the ring to jump to that point in the song. */
-  const seekFromPoint = (event: React.MouseEvent<SVGSVGElement>) => {
+  const seekFromPoint = (event: React.PointerEvent<SVGSVGElement>) => {
     if (!enabled) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const dx = event.clientX - (rect.left + rect.width / 2);
@@ -403,8 +481,10 @@ function SeekerRing({
       aria-valuemin={enabled ? 0 : undefined}
       aria-valuemax={enabled ? 100 : undefined}
       aria-valuenow={enabled ? Math.round(progress * 100) : undefined}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={seekFromPoint}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        seekFromPoint(event);
+      }}
       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
       // The element spans the whole centre of the disc, but only the grab
       // ring below accepts pointers. Left interactive as a whole it would
@@ -800,13 +880,9 @@ function MysteryRoll({
 
 function NowPlaying({
   track,
-  albumName,
-  durationLabel,
   elapsed,
 }: {
   track: Track;
-  albumName?: string;
-  durationLabel: string | null;
   /** `0:42 / 3:02`, or null when this record has no master to play. */
   elapsed: string | null;
 }) {
@@ -831,15 +907,13 @@ function NowPlaying({
       <h3 className="mt-3 text-center font-headline text-3xl leading-tight tracking-wide text-white sm:text-4xl">
         {track.title.replace(/\.mp3$/i, "")}
       </h3>
-      {/* The credit line and the clock, both roughly doubled. Lonedruida sets
-          small sizes tight and dark, and at 12px this line was a grey bar you
-          could tell was text without being able to read. The title above keeps
-          its lead because it moves up with them — same hierarchy, legible. */}
-      <p className="mt-1 text-center font-body text-base text-white/65 sm:text-lg">
-        {track.artist}
-        {albumName ? ` · ${albumName}` : ""}
-        {durationLabel ? ` · ${durationLabel}` : ""}
-      </p>
+      {/* THE CREDIT LINE IS GONE. "DOTM · <album> · <total>" used to sit here,
+          between the title and the clock, and every part of it was already on
+          screen: the artist is whose window this is, the album is the sleeve
+          directly above, and the total duration is the right-hand half of the
+          clock directly below. Three restatements in one row, set solid across
+          the full width, which is why it read as a highlighted bar rather than
+          as type. The clock keeps the only figure that changes. */}
 
       <p
         className={cn(

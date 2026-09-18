@@ -98,6 +98,7 @@ export function VaultFiles({
         <button
           key={file.id}
           type="button"
+          onClick={() => onOpen(file.id)}
           onDoubleClick={() => onOpen(file.id)}
           // Enter and Space stand in for the double-click. A control that can
           // only be double-clicked is unreachable without a mouse, and these

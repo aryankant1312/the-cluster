@@ -4,7 +4,7 @@ import { startTransition, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useWindowManager } from "@/components/window-manager/window-manager-context";
 import { usePersona } from "@/components/providers/PersonaProvider";
-import { useAuthScope } from "@/components/providers/AuthProvider";
+import { useAuth, useAuthScope } from "@/components/providers/AuthProvider";
 import { DotmWindow } from "@/components/window-manager/DotmWindow";
 import { DesktopWallpaper } from "@/components/dotm/DesktopWallpaper";
 import { StickyNoteCard } from "@/components/dotm/StickyNoteCard";
@@ -15,6 +15,7 @@ import { DotmVaultIcon } from "@/components/dotm/DotmVaultIcon";
 import { BookDotm } from "@/components/shared/BookDotm";
 import { DesktopMetrics } from "@/components/shared/DesktopMetrics";
 import { WindowLoading } from "@/components/window-manager/WindowLoading";
+import { DotmWindowLoader } from "@/components/shared/DotmLoader";
 import { Blink, DOTM_OPEN_MS } from "@/components/shared/Blink";
 import { disarmBlink, isBlinkArmed } from "@/lib/blink-gate";
 
@@ -55,11 +56,11 @@ const ShowsExperience = dynamic(
 );
 const ShootOnSightWindow = dynamic(
   () => import("@/components/shared/ShootOnSightWindow").then((m) => m.ShootOnSightWindow),
-  { ssr: false, loading: () => <WindowLoading label="Shoot at Site" /> },
+  { ssr: false, loading: () => <DotmWindowLoader label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
   () => import("@/components/shared/ClusterWallWindow").then((m) => m.ClusterWallWindow),
-  { ssr: false, loading: () => <WindowLoading label="Cluster Wall" /> },
+  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" /> },
 );
 /**
  * Drops shows the teaser, not the shop.
@@ -96,7 +97,34 @@ export default function DotmDesktopPage() {
   // no way of knowing which of the two sessions to read.
   useAuthScope("dotm");
 
+  const { user } = useAuth();
   const [notes, setNotes] = useState<StickyNote[]>([]);
+  const [noteError, setNoteError] = useState("");
+  const storageKey = user ? `dotm:notes:${user.id}` : null;
+  useEffect(() => {
+    const load = () => {
+      if (!storageKey) { setNotes([]); return; }
+      try {
+        const value: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
+        setNotes(Array.isArray(value) ? value.filter((n): n is StickyNote => !!n && typeof n.id === "string" && typeof n.text === "string" && Number.isFinite(n.x) && Number.isFinite(n.y)) : []);
+      } catch { setNotes([]); setNoteError("Saved notes could not be read in this browser."); }
+    };
+    // Storage is external state; defer the initial read until after mount.
+    const timer = setTimeout(load, 0);
+    const sync = (event: StorageEvent) => { if (event.key === storageKey) load(); };
+    window.addEventListener("storage", sync);
+    return () => { clearTimeout(timer); window.removeEventListener("storage", sync); };
+  }, [storageKey]);
+  const saveNotes = (next: StickyNote[]) => {
+    if (!storageKey) return false;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      setNotes(next);
+      setNoteError("");
+      return true;
+    } catch { setNoteError("Notes could not be saved. Allow browser storage and try again."); return false; }
+  };
+  const dismissNote = (id: string) => { saveNotes(notes.filter(n => n.id !== id)); };
 
   useEffect(() => {
     startTransition(() => syncPersona("dotm"));
@@ -149,7 +177,8 @@ export default function DotmDesktopPage() {
         <ContactCard onBook={() => wm.openWindow("book")} />
       </DotmWindow>
       <DotmWindow id="notes" title="Notes" width={380}>
-        <NotesApp onPost={(note) => setNotes((prev) => [...prev, note])} />
+        <NotesApp key={storageKey} onPost={(note) => saveNotes([...notes, note])} />
+        {noteError && <p role="alert" className="mt-2 text-sm text-red-400">{noteError}</p>}
       </DotmWindow>
       {/* The one window that opens fullscreen. The wheel and the record
           playing beside it are a two-pane layout, and squeezing both into
@@ -208,11 +237,15 @@ export default function DotmDesktopPage() {
       <DotmWindow id="stats" title="Live Stats" width="74vw" height="80vh" fullSurface>
         <LiveStats />
       </DotmWindow>
-      {/* The portfolio window carries a photograph as its ground now, and a
-          photograph shown small is a thumbnail. Up from 88×84 — the height
-          still yields to the shell's dock clearance on a short viewport, which
-          on a 1080p display works out at roughly a fifth more window. */}
-      <DotmWindow id="portfolio" title="Portfolio" width="98vw" height="94vh" fullSurface>
+      {/* Fullscreen supplies roughly twenty percent more visible area than the
+          previous near-edge window at a laptop viewport. The photograph still
+          covers the full surface and the conveyor remains above it. */}
+      <DotmWindow
+        id="portfolio"
+        title="Portfolio"
+        placement="fullscreen"
+        fullSurface
+      >
         <DotmPortfolioWindow />
       </DotmWindow>
       {/* The Vault opens filled, like the music player. Behind the code lock
@@ -226,7 +259,7 @@ export default function DotmDesktopPage() {
       <DotmVaultIcon />
 
       {notes.map((note) => (
-        <StickyNoteCard key={note.id} note={note} />
+        <StickyNoteCard key={note.id} note={note} onDismiss={dismissNote} />
       ))}
 
       {opening && (

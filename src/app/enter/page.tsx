@@ -145,16 +145,22 @@ export default function EnterPage() {
         autoPlay
         muted
         playsInline
+        controls={false}
+        controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
+        disablePictureInPicture
+        disableRemotePlayback
+        draggable={false}
+        tabIndex={-1}
         preload="auto"
         onEnded={() => setEnded(true)}
         // If autoplay is refused outright the poster is already the final
         // frame, so a blocked video looks the same as a finished one.
         onError={() => setEnded(true)}
-        aria-label="A DOTM Original"
+        aria-hidden="true"
         // Framed a little high on purpose: `object-cover` crops the long
         // axis, and taking that crop from below lifts the wordmark off the
         // midline and opens the gap between it and the button.
-        className="absolute inset-0 h-full w-full object-cover"
+        className="intro-title-video pointer-events-none absolute inset-0 h-full w-full object-cover"
         style={{ objectPosition: "50% 38%" }}
       />
 

@@ -20,11 +20,14 @@ export function useCountdown(targetIso: string): CountdownState {
   const [state, setState] = useState<CountdownState>(PLACEHOLDER);
 
   useEffect(() => {
-    setState(getCountdownState(targetIso));
+    const initial = setTimeout(() => setState(getCountdownState(targetIso)), 0);
     const interval = setInterval(() => {
       setState(getCountdownState(targetIso));
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
   }, [targetIso]);
 
   return state;

@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     // failing the whole window. Counts at zero, nothing lit.
     return NextResponse.json(
       { counts: emptyBoard(), mine: {}, degraded: true },
-      { headers: { "Cache-Control": "no-store, private" } },
+      { status: 503, headers: { "Cache-Control": "no-store, private" } },
     );
   }
 }

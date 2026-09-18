@@ -16,7 +16,9 @@ import { RecycleBinWindow } from "@/components/dev/window-content/RecycleBinWind
 import { ContactWindow } from "@/components/dev/window-content/ContactWindow";
 import { BookDotm } from "@/components/shared/BookDotm";
 import { DesktopMetrics } from "@/components/shared/DesktopMetrics";
+import { DevDesktopWallpaper } from "@/components/dev/DevDesktopWallpaper";
 import { WindowLoading } from "@/components/window-manager/WindowLoading";
+import { DotmWindowLoader } from "@/components/shared/DotmLoader";
 
 /**
  * WINDOW CONTENT IS CODE-SPLIT. Read this before adding a static import above.
@@ -68,11 +70,15 @@ const LiveStats = dynamic(
 );
 const ShootOnSightWindow = dynamic(
   () => import("@/components/shared/ShootOnSightWindow").then((m) => m.ShootOnSightWindow),
-  { ssr: false, loading: () => <WindowLoading label="Shoot at Site" /> },
+  { ssr: false, loading: () => <DotmWindowLoader label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
   () => import("@/components/shared/ClusterWallWindow").then((m) => m.ClusterWallWindow),
-  { ssr: false, loading: () => <WindowLoading label="Cluster Wall" /> },
+  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" /> },
+);
+const ShowsExperience = dynamic(
+  () => import("@/components/dotm/window-content/ShowsExperience").then((m) => m.ShowsExperience),
+  { ssr: false, loading: () => <WindowLoading label="Shows" /> },
 );
 import {
   MyMusicImageIcon,
@@ -217,16 +223,9 @@ export default function DevDesktopPage() {
           ever stop forming one, is behind the window shells as well as behind
           the desktop. At `z-0` in first position it is below every later
           sibling by ordinary paint order, with nothing to reason about. */}
-      <video
+      <DevDesktopWallpaper
         src="/videos/dev-desktop.mp4"
         poster="/videos/dev-desktop-poster.jpg"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-        className="absolute inset-0 z-0 h-full w-full object-cover"
       />
 
       <DesktopMetrics />
@@ -261,7 +260,7 @@ export default function DevDesktopPage() {
         initial={{ x: 0, y: 0 }}
         style={{ right: RIGHT_COLUMN_INSET, top: ICON_STACK_TOP }}
         className={revealed(STACK_ICONS.length)}
-        onOpen={() => router.push("/shows")}
+        onOpen={() => wm.openWindow("shows")}
       />
 
       {/* The middle of that column. `calc(50% - 55px)` is half the desktop
@@ -308,7 +307,15 @@ export default function DevDesktopPage() {
       <DevWindow id="book" title="Book DOTM" width="82vw" height="70vh">
         <BookDotm />
       </DevWindow>
-      <DevWindow id="my-music" title={DEV_WINDOWS.find((w) => w.id === "my-music")!.title}>
+      {/* 576, up a fifth from the shell's 480 default. The grid inside is three
+          fixed-width tiles wide whatever the window is, so the extra 96px goes
+          into the room around them — which is what the folders, promoted to
+          the top rows, needed to stop reading as a cramped strip. */}
+      <DevWindow
+        id="my-music"
+        title={DEV_WINDOWS.find((w) => w.id === "my-music")!.title}
+        width={576}
+      >
         <MyMusicWindow onSelectTrack={playTrack} onOpenFolder={(id) => wm.openWindow(id)} />
       </DevWindow>
       <DevWindow id="folder-therapy-session" title="Therapy Session pt.1">
@@ -418,6 +425,9 @@ export default function DevDesktopPage() {
           would only be a second frame inside the first. */}
       <DevWindow id="shoot-on-sight" title="Shoot at Site" placement="fullscreen" fullSurface>
         <ShootOnSightWindow isDotm={false} />
+      </DevWindow>
+      <DevWindow id="shows" title="Shows" placement="fullscreen" fullSurface>
+        <ShowsExperience />
       </DevWindow>
       <DevWindow id="merch" title="Drops" placement="fullscreen" fullSurface>
         <ComingSoonDrop />

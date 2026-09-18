@@ -32,7 +32,7 @@ export function DotmVaultWindow() {
   }
 
   return (
-    <div className="relative w-full h-full min-h-[420px] select-none">
+    <div className="relative h-full min-h-0 w-full overflow-hidden select-none">
       <LetterGlitch
         glitchColors={GLITCH_COLORS}
         glitchSpeed={45}
@@ -57,35 +57,23 @@ export function DotmVaultWindow() {
           <input
             ref={inputRef}
             type="password"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={4}
+            style={{
+              color: "#ffffff",
+              WebkitTextFillColor: "#ffffff",
+              caretColor: "#ffffff",
+              textShadow: "0 0 0 #ffffff",
+              opacity: 1,
+            }}
             value={code}
             onChange={(e) => {
-              setCode(e.target.value);
+              setCode(e.target.value.replace(/\D/g, "").slice(0, 4));
               if (denied) setDenied(false);
             }}
             placeholder="4-digit code"
-            /*
-              `vault-code-input` is where the white actually comes from — see
-              the block of the same name in `globals.css`. `text-white` was
-              already here and was already computing to white; what paints the
-              glyphs is `-webkit-text-fill-color`, which the UA supplies from
-              the OS theme when no `color-scheme` is declared, and which
-              autofill supplies unconditionally.
-
-              `bg-[#0b0b0b]` rather than `bg-black/70`, and that is the second
-              half of the same complaint. At 70% the LetterGlitch behind ran
-              straight through the field — red and white characters scrolling
-              under the ones being typed — so even a white glyph had matrix
-              rain for a background. An opaque ground gives the code something
-              to be legible against rather than something to compete with.
-
-              THE DENIED STATE KEEPS ITS WHITE TEXT. It used to turn the digits
-              `#ff0033` along with the border, which is red type on near-black
-              at 18px — the least readable this field ever got, arriving at the
-              exact moment the visitor needs to re-read what they typed. The
-              border and the ACCESS DENIED line carry the error; the code stays
-              readable.
-            */
-            className={`vault-code-input w-full px-3 py-2.5 text-center font-chrome text-lg tracking-[0.3em] outline-none bg-[#0b0b0b] border ${
+            className={`dotm-dark-field h-12 w-full border bg-[#0b0b0b] px-3 text-center font-chrome text-lg tracking-[0.3em] text-white outline-none ${
               denied ? "border-[#ff0033]" : "border-white/25 focus:border-[#ff0033]"
             }`}
           />

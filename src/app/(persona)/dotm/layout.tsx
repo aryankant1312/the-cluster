@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { WindowManagerProvider } from "@/components/window-manager/window-manager-context";
 import { Dock } from "@/components/dotm/Dock";
+import { PersonaTopBar } from "@/components/chrome/PersonaTopBar";
 import { currentUser } from "@/lib/auth";
 
 /**
@@ -26,6 +27,7 @@ export default async function DotmLayout({ children }: { children: React.ReactNo
 
   return (
     <WindowManagerProvider>
+      <PersonaTopBar />
       <div className="relative flex-1 overflow-hidden pb-24 bg-black">{children}</div>
       <Dock />
     </WindowManagerProvider>

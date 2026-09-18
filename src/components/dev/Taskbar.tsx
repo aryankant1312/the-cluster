@@ -123,7 +123,7 @@ export function Taskbar() {
   if (wm.chromeHidden) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-[200] flex items-center gap-2 bg-taskbar border-t border-black px-2 py-1">
+    <div data-dev-taskbar className="fixed bottom-0 inset-x-0 z-[200] flex items-center gap-2 bg-taskbar border-t border-black px-2 py-1">
       <StartMenu />
 
       {/*
@@ -150,7 +150,7 @@ export function Taskbar() {
             // former size. `text-[13px]` brings the type up with them so the
             // pairing holds — a 12px label beside a 24px mark reads as a
             // caption rather than as the button's own name.
-            className="win98-press flex shrink-0 items-center gap-2 px-2.5 py-1.5 font-body text-[15px] font-normal hover:bg-black/10"
+            className="win98-press flex shrink-0 items-center gap-2 px-2.5 py-1.5 font-body text-[18px] font-normal leading-none hover:bg-black/10"
           >
             {item.icon}
             <span

@@ -35,6 +35,7 @@ interface Mask<T extends string> {
 export function useSilhouetteHitTest<T extends string>(
   containerRef: React.RefObject<HTMLElement | null>,
   layers: SilhouetteLayer<T>[],
+  objectPosition: { x: number; y: number } = { x: 0.5, y: 0.5 },
 ) {
   const [hovered, setHovered] = useState<T | null>(null);
   const masksRef = useRef<Mask<T>[]>([]);
@@ -106,8 +107,8 @@ export function useSilhouetteHitTest<T extends string>(
           rect.width / mask.naturalWidth,
           rect.height / mask.naturalHeight,
         );
-        const offsetX = (rect.width - mask.naturalWidth * scale) / 2;
-        const offsetY = (rect.height - mask.naturalHeight * scale) / 2;
+        const offsetX = (rect.width - mask.naturalWidth * scale) * objectPosition.x;
+        const offsetY = (rect.height - mask.naturalHeight * scale) * objectPosition.y;
 
         const imageX = (px - offsetX) / scale;
         const imageY = (py - offsetY) / scale;
@@ -135,7 +136,7 @@ export function useSilhouetteHitTest<T extends string>(
       }
       return null;
     },
-    [containerRef],
+    [containerRef, objectPosition.x, objectPosition.y],
   );
 
   /**

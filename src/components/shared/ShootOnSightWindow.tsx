@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { shootLocations } from "@/content/shoot-on-sight";
+import { DotmLoader } from "@/components/shared/DotmLoader";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,12 +50,53 @@ const MARK_CLIP = {
  */
 const CLIP_COLUMN = "lg:w-[38%] lg:max-w-[620px]";
 
+/**
+ * How long the loader will wait on the clip before standing down anyway.
+ *
+ * A safety net, not the mechanism. `loadeddata` is what normally clears it; a
+ * clip that errors, is blocked, or is served from a cold CDN must not be able
+ * to leave a loader on screen for ever in front of a window that is otherwise
+ * perfectly usable.
+ */
+const CLIP_WAIT_MS = 4000;
+
 export function ShootOnSightWindow({ isDotm }: { isDotm: boolean }) {
   const locations = shootLocations();
   const ground = isDotm ? "bg-[#0a0a0b] text-white" : "bg-persona-window-bg text-black";
 
+  /**
+   * WHEN THIS WINDOW COUNTS AS LOADED.
+   *
+   * The clip down the right-hand side is the heaviest thing here by an order
+   * of magnitude — about 4.5MB against a list of text — so it is what the
+   * loader waits on. Everything else is on screen long before it.
+   *
+   * Three things can clear it, and none of them is an effect writing state
+   * synchronously: `loadeddata` on the clip (the ordinary path), an `error` on
+   * it (a clip that will never arrive must not hold the window hostage), and
+   * the timeout below as a backstop. The reset when the persona changes is the
+   * render-time adjustment — React's documented way to reset state when a prop
+   * changes — because switching persona swaps the file underneath and the new
+   * one has not loaded yet.
+   */
+  const [ready, setReady] = useState(false);
+  const [shownPersona, setShownPersona] = useState(isDotm);
+
+  if (shownPersona !== isDotm) {
+    setShownPersona(isDotm);
+    setReady(false);
+  }
+
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), CLIP_WAIT_MS);
+    return () => clearTimeout(t);
+  }, [isDotm]);
+
   return (
-    <div className={cn("flex h-full w-full flex-col lg:flex-row", ground)}>
+    // `relative`, so the loader below has something to be `inset-0` of.
+    <div className={cn("relative flex h-full w-full flex-col lg:flex-row", ground)}>
+      {/* The same blurred-window loader used by the Cluster Wall. */}
+      <DotmLoader show={!ready} label="Loading Shoot at Site" />
       {/* ── The places ──────────────────────────────────────────────────
           `min-h-0` on a flex child that scrolls. Without it the child's
           min-content height wins over `overflow-y-auto` and the column grows
@@ -65,18 +108,6 @@ export function ShootOnSightWindow({ isDotm }: { isDotm: boolean }) {
             <div className="max-w-md">
               <p className="font-headline text-2xl uppercase tracking-[0.18em]">
                 Shoot at Site
-              </p>
-              <p
-                className={cn(
-                  "long-text mt-3 text-sm leading-relaxed",
-                  isDotm ? "text-white/55" : "text-black/60",
-                )}
-              >
-                Locations, sets and the places behind the videos. Nothing here yet —
-                drop media into{" "}
-                <code className="font-chrome text-[13px]">public/images/shoot-on-sight/</code>{" "}
-                and list it in{" "}
-                <code className="font-chrome text-[13px]">src/content/shoot-on-sight.ts</code>.
               </p>
             </div>
           </div>
@@ -168,6 +199,11 @@ export function ShootOnSightWindow({ isDotm }: { isDotm: boolean }) {
         */}
         <video
           key={isDotm ? "dotm" : "dev"}
+          // Both clear the loader. `error` as well as `loadeddata`, because a
+          // clip that 404s or is refused would otherwise leave the window
+          // behind a loader until the backstop timer expired.
+          onLoadedData={() => setReady(true)}
+          onError={() => setReady(true)}
           src={isDotm ? MARK_CLIP.dotm : MARK_CLIP.dev}
           autoPlay
           loop

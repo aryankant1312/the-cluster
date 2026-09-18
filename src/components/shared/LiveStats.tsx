@@ -9,6 +9,7 @@ import {
   type StatPanel,
   type StatPlatform,
 } from "@/content/stat-panels";
+import { useCountUp } from "@/hooks/use-count-up";
 import { useCountTo } from "@/hooks/use-count-to";
 import { cn } from "@/lib/utils";
 
@@ -172,13 +173,13 @@ export function LiveStats() {
         </nav>
       </header>
 
-      {/* The reporting window, where the panel has one. Above the figures
-          rather than under them, so it is read as a qualifier before the
-          number and not as a footnote after it. */}
+      {/* Keep the reporting window in its own full-width band, matching the
+          earlier Live Stats composition: it qualifies both metric panes
+          rather than reading as a fourth line of the platform heading. */}
       {panel.period && (
         <p
           className={cn(
-            "shrink-0 border-b px-6 py-2 font-chrome text-[10px] uppercase tracking-[0.3em]",
+            "shrink-0 border-b px-6 py-2 font-chrome text-[10px] uppercase tracking-[0.3em] sm:text-xs",
             isDotm ? "border-white/10 text-white/45" : "border-black/10 text-black/50",
           )}
         >
@@ -216,10 +217,11 @@ export function LiveStats() {
       {panel.action && (
         <div
           className={cn(
-            "flex shrink-0 justify-end border-t px-6 py-3",
+            "flex shrink-0 flex-nowrap items-center justify-between gap-6 border-t px-6 py-4",
             isDotm ? "border-white/10" : "border-black/15",
           )}
         >
+          <GoalMetric key={panel.id} panel={panel} value={audience?.values[panel.metrics[0].key] ?? null} />
           <PanelActionButton
             label={panel.action.label}
             href={panel.action.href}
@@ -636,3 +638,17 @@ function PlatformMark({
 }
 
 export default LiveStats;
+
+function GoalMetric({ panel, value }: { panel: StatPanel; value: number | null }) {
+  const animated = useCountUp(value);
+  return (
+    <p className="min-w-0 overflow-x-auto whitespace-nowrap font-body text-base sm:text-lg">
+      <span className="opacity-75">{panel.goal}</span>
+      <span className="mx-3 opacity-35">•</span>
+      <span className="font-chrome text-2xl tabular-nums sm:text-3xl" style={{ color: panel.accent }}>
+        {animated === null ? "—" : formatIndian(Math.round(animated))}
+      </span>{" "}
+      <span>{panel.metrics[0].label.toLowerCase()}</span>
+    </p>
+  );
+}

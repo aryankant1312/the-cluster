@@ -84,6 +84,8 @@ export interface StatPanel {
   onAccent: string;
   /** One line under the panel title. */
   blurb: string;
+  /** Strategic goal description for the platform. */
+  goal?: string;
   /**
    * The window these figures are read over, set above them. Omitted where
    * the figures are lifetime totals — labelling a running total "last 28
@@ -104,6 +106,7 @@ export const statPanels: StatPanel[] = [
     accent: "#ff0033",
     onAccent: "#ffffff",
     blurb: "The visual HQ: high-production visuals for a locked-in audience",
+    goal: "For boosting discoverability",
     metrics: [
       {
         id: "yt-subscribers",
@@ -137,6 +140,7 @@ export const statPanels: StatPanel[] = [
     accent: "#d62976",
     onAccent: "#ffffff",
     blurb: "Where lifestyle meets discography",
+    goal: "For building long-term audience",
     period: ROLLING_WINDOW,
     action: {
       label: "Follow DOTM",
@@ -169,6 +173,7 @@ export const statPanels: StatPanel[] = [
     accent: "#1ed760",
     onAccent: "#062d16",
     blurb: "Pure catalog depth, high save rates, and endless repeat plays",
+    goal: "For boosting discoverability",
     period: ROLLING_WINDOW,
     action: {
       label: "Follow DOTM",

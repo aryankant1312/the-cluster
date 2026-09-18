@@ -7,63 +7,10 @@ import { authSessions, users } from "@/lib/db/repositories";
 import type { User } from "@/lib/db/types";
 import type { Persona } from "@/content/types";
 
-/**
- * SIGNING IN.
- *
- * Two ways in, one destination. Google hands back an address it has already
- * verified; a one-time code proves the same thing about an address the visitor
- * typed. Either way the answer is "this person can receive mail at X", and
- * `users.upsertByEmail` turns that into the same row — so the two routes are
- * not two accounts.
- *
- * WHY THIS IS HAND-ROLLED. The project already owns both primitives an auth
- * layer needs: HMAC-signed cookies in `lib/cookies.ts` and scrypt hashing in
- * `lib/admin-auth.ts`. A library would have brought a second session idiom, a
- * database adapter for a driver seam that is deliberately minimal, and its own
- * opinions about login pages — of which this site has two, both in costume.
- * The Google authorization-code flow is a POST and a GET.
- *
- * NOT THE SAME THING AS `admin-auth.ts`. That is one shared password guarding
- * `/admin`, and it stays exactly where it is. This is per-person identity for
- * visitors. Two systems because they answer two different questions: "may this
- * request change what the public sees" and "who is this".
- *
- * ONE SESSION PER DOOR. This used to be a single unscoped cookie serving both
- * faces, on the argument that proving who you are once should be enough. The
- * site is no longer arranged that way: there is no persona switch in the
- * chrome, each desktop is reached through its own entrance, and signing in is
- * something you do *at an entrance*. So DEV and DOTM hold separate sessions,
- * separate rows, separate cookies.
- *
- * THAT IS NOT THE SAME AS ASKING TWICE EVERY TIME. Each session still lives
- * thirty days. A visitor who has signed in at both doors is not asked again at
- * either; a visitor who has only ever used DEV is asked once, the first time
- * they try DOTM. The cost is one extra sign-in per person per door, ever.
- *
- * WHY TWO COOKIES RATHER THAN ONE CARRYING BOTH. A single cookie holding a map
- * of persona to session id has to be re-signed and rewritten every time either
- * door is used, and a write racing a write loses one of the two sessions. Two
- * cookies never touch each other: signing in at DOTM cannot disturb DEV, and
- * signing out of one cannot revoke the other.
- *
- * WHAT IS STORED. A session id, signed, in an httpOnly cookie — and nothing
- * else. Identity is looked up server-side per request. That is what makes
- * signing out immediate: the row goes and the cookie stops meaning anything,
- * rather than staying valid in the holder's browser until it expires.
- */
-
-/**
- * One cookie per door.
- *
- * The old `cluster_session` is deliberately not read. Its rows carry no
- * persona, so honouring it would mean deciding which desktop a legacy session
- * unlocks — and either answer is wrong for half the people holding one.
- * Ignoring it costs everybody a single sign-in per door and nothing after.
- */
-const SESSION_COOKIES = {
-  dev: "cluster_session_dev",
-  dotm: "cluster_session_dotm",
-} as const satisfies Record<Persona, string>;
+// One signed, httpOnly session serves both views. Legacy cookies are accepted
+// until expiry and revoked together on explicit logout.
+const SESSION_COOKIE = "cluster_session";
+const ALL_SESSION_COOKIES = [SESSION_COOKIE, "cluster_session_dev", "cluster_session_dotm"];
 
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -122,8 +69,8 @@ export function hasMailer(): boolean {
 export async function createSession(
   userId: string,
   persona: Persona,
-  meta: { userAgent?: string; ipHash?: string } = {},
-): Promise<{ name: string; value: string; maxAge: number }> {
+  meta: { userAgent?: string; ipHash?: string; remember?: boolean } = {},
+): Promise<{ name: string; value: string; maxAge: number | undefined }> {
   const session = await authSessions.create({
     userId,
     persona,
@@ -132,64 +79,39 @@ export async function createSession(
     ipHash: meta.ipHash,
   });
   return {
-    name: SESSION_COOKIES[persona],
+    name: SESSION_COOKIE,
     value: signCookieValue(session.id),
-    maxAge: Math.floor(SESSION_MS / 1000),
+    maxAge: meta.remember === true ? Math.floor(SESSION_MS / 1000) : undefined,
   };
 }
 
-/**
- * The signed-in account *for this door*, or null.
- *
- * `persona` is required at every call site for the same reason it is required
- * on `authSessions.resolve`: a gate that does not say which desktop it guards
- * is a gate that accepts the other one's session. Making it mandatory turns
- * that from a silent hole into a compile error.
- */
-export async function currentUser(persona: Persona): Promise<User | null> {
+export async function currentUser(_persona: Persona): Promise<User | null> {
+  void _persona;
   const store = await cookies();
-  const sessionId = verifyCookieValue(store.get(SESSION_COOKIES[persona])?.value);
-  if (!sessionId) return null;
-  return authSessions.resolve(sessionId, persona);
+  for (const name of ALL_SESSION_COOKIES) {
+    const id = verifyCookieValue(store.get(name)?.value);
+    if (id) {
+      const user = await authSessions.resolve(id);
+      if (user) return user;
+    }
+  }
+  return null;
 }
 
-/**
- * The signed-in account at *either* door, for callers that are not a gate.
- *
- * Telemetry is the only such caller: it is answering "is this browser somebody
- * we know", not "may this browser be here", and the analytics route sees
- * events from both desktops through one endpoint. Asking it to name a door
- * would mean inventing one for every event that does not carry a persona, and
- * a guess written into the identity column is worse than the truth.
- *
- * DEV is checked first only because it has to be checked first; both resolve
- * to the same `users` row for anybody who signed in twice, so the order cannot
- * change the answer.
- */
 export async function currentUserAnyPersona(): Promise<User | null> {
-  return (await currentUser("dev")) ?? (await currentUser("dotm"));
+  return currentUser("dev");
 }
 
-/** The raw session id for one door, for the routes that have to end it. */
-export async function currentSessionId(persona: Persona): Promise<string | null> {
+export async function endCurrentSession(_persona: Persona): Promise<void> {
+  void _persona;
   const store = await cookies();
-  return verifyCookieValue(store.get(SESSION_COOKIES[persona])?.value);
+  for (const name of ALL_SESSION_COOKIES) {
+    const id = verifyCookieValue(store.get(name)?.value);
+    if (id) await authSessions.destroy(id);
+  }
 }
 
-/**
- * End one door's session, leaving the other alone.
- *
- * Signing out of DOTM must not lock somebody out of DEV: they signed in twice,
- * on purpose, and only asked to leave once.
- */
-export async function endCurrentSession(persona: Persona): Promise<void> {
-  const sessionId = await currentSessionId(persona);
-  if (sessionId) await authSessions.destroy(sessionId);
-}
-
-export function sessionCookieName(persona: Persona): string {
-  return SESSION_COOKIES[persona];
-}
+export function sessionCookieName(_persona: Persona): string { void _persona; return SESSION_COOKIE; }
 
 /**
  * Read a persona off an untrusted string, or null.
@@ -211,7 +133,7 @@ export function parsePersona(value: unknown): Persona | null {
  * on exactly that navigation — the visitor would arrive back signed in and be
  * told they were not.
  */
-export function sessionCookieOptions(maxAge: number) {
+export function sessionCookieOptions(maxAge: number | undefined) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
@@ -228,7 +150,7 @@ const GOOGLE_TOKEN = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO = "https://www.googleapis.com/oauth2/v3/userinfo";
 
 export function googleRedirectUri(origin: string): string {
-  return process.env.GOOGLE_REDIRECT_URI || `${origin}/api/auth/google/callback`;
+  return new URL("/api/auth/google/callback", origin).toString();
 }
 
 export function newState(): string {

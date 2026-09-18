@@ -4,7 +4,6 @@
 "use client";
 
 import { Button } from "@/components/originkit/ui/hero-03/button";
-import type { KeyboardEvent } from "react";
 
 /** Public asset URLs — use a function so preview rewriters stay stable. */
 function asset(file: string) {
@@ -23,15 +22,6 @@ type NavbarProps = {
 };
 
 export const Navbar = ({ onExplore }: NavbarProps) => {
-  const handleKeyDown = (
-    event: KeyboardEvent<HTMLAnchorElement>,
-    href: string,
-  ) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    window.location.hash = href;
-  };
-
   return (
     <nav aria-label="Primary" className="relative z-30 w-full">
       <div className="flex w-full items-center justify-between p-4 ipad:px-12 ipad:py-8 desktop-sm:hidden">
@@ -77,7 +67,6 @@ export const Navbar = ({ onExplore }: NavbarProps) => {
                 href={link.href}
                 tabIndex={0}
                 aria-label={link.label}
-                onKeyDown={(event) => handleKeyDown(event, link.href)}
                 className="inline-flex min-h-11 items-center touch-manipulation whitespace-nowrap transition-colors duration-200 ease focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d1d1d] [-webkit-tap-highlight-color:transparent] [@media(hover:hover)_and_(pointer:fine)]:hover:text-black"
               >
                 {link.label}

@@ -61,6 +61,8 @@ export interface BrandCase {
    */
   fit: number;
   campaign: string;
+  /** Social post whose comments belong to this campaign. Null until supplied. */
+  socialUrl: string | null;
   role: string;
   /** `YYYY`, or empty while unconfirmed. */
   year: string;
@@ -85,7 +87,8 @@ export const brandCases: BrandCase[] = [
     logo: nothingCmfLogo,
     bg: "#fb5b31",
     fit: 0.7,
-    campaign: "CMF Phone 2",
+    campaign: "CMF 2 Pro",
+    socialUrl: null,
     role: "Artist / Creator / Campaign Face",
     year: "",
     reach: null,
@@ -100,7 +103,8 @@ export const brandCases: BrandCase[] = [
     logo: mtvLogo,
     bg: "#000000",
     fit: 0.52,
-    campaign: "MTV Hustle — Season 04",
+    campaign: "Goli Baari",
+    socialUrl: null,
     role: "Contestant / Performing artist",
     year: "",
     reach: null,
@@ -115,7 +119,8 @@ export const brandCases: BrandCase[] = [
     logo: saregamaLogo,
     bg: "#000000",
     fit: 0.62,
-    campaign: "Label release",
+    campaign: "Heading",
+    socialUrl: null,
     role: "Recording artist / Composer",
     year: "",
     reach: null,
@@ -130,7 +135,8 @@ export const brandCases: BrandCase[] = [
     logo: heroLogo,
     bg: "#000000",
     fit: 0.74,
-    campaign: "Xtreme 160R",
+    campaign: "Hero Xtreme",
+    socialUrl: null,
     role: "Soundtrack / Featured artist",
     year: "",
     reach: null,
@@ -149,7 +155,8 @@ export const brandCases: BrandCase[] = [
     // height; 0.46 would have set the whole lockup at half the height the
     // disc alone used to have.
     fit: 0.74,
-    campaign: "Editorial & artist programming",
+    campaign: "Flow Unchained",
+    socialUrl: null,
     role: "Featured artist",
     year: "",
     reach: null,
@@ -164,7 +171,8 @@ export const brandCases: BrandCase[] = [
     logo: rouletteLogo,
     bg: "#000000",
     fit: 0.74,
-    campaign: "Brand collaboration",
+    campaign: "Heading",
+    socialUrl: null,
     role: "Featured artist",
     year: "",
     reach: null,
@@ -179,7 +187,8 @@ export const brandCases: BrandCase[] = [
     logo: tunecoreLogo,
     bg: "#000000",
     fit: 0.82,
-    campaign: "Distribution partnership",
+    campaign: "Tunecore Accelerator",
+    socialUrl: null,
     role: "Independent artist",
     year: "",
     reach: null,
