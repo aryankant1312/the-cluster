@@ -8,6 +8,7 @@ import { PlatformLinkRow } from "@/components/shared/PlatformLinkRow";
 import { trackArtwork, tracks } from "@/content/tracks";
 import { getAudioSource } from "@/lib/audio-source";
 import { cn } from "@/lib/utils";
+import { useWindowManager } from "@/components/window-manager/window-manager-context";
 
 /**
  * DEV's music player.
@@ -45,6 +46,8 @@ export function MusicPlayerWindow({
   initialIndex?: number;
   playRequestId?: number;
 }) {
+  const wm = useWindowManager();
+  const dropsVisible = wm.isOpen("merch") && !wm.isMinimized("merch");
   const reduceMotion = useReducedMotion();
   const [index, setIndex] = useState(initialIndex);
   const [isPlaying, setIsPlaying] = useState(playRequestId > 0);
@@ -94,11 +97,11 @@ export function MusicPlayerWindow({
     // A rejected play() is not treated as a refusal: swapping `src` and
     // calling play() in the same commit rejects with AbortError before the
     // file has loaded. `onCanPlay` below retries once there is data.
-    if (isPlaying) void audio.play().catch(() => undefined);
+    if (isPlaying && !dropsVisible) void audio.play().catch(() => undefined);
     else audio.pause();
     // volume is intentionally not a dependency here - it has its own effect below
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, src]);
+  }, [isPlaying, src, dropsVisible]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -123,7 +126,7 @@ export function MusicPlayerWindow({
     audio.currentTime = next;
     setCurrentTime(next);
     setIsPlaying(true);
-    void audio.play().catch(() => undefined);
+    if (!dropsVisible) void audio.play().catch(() => undefined);
   };
 
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,7 +143,7 @@ export function MusicPlayerWindow({
     audio.currentTime = time;
     setCurrentTime(time);
     setIsPlaying(true);
-    void audio.play().catch(() => undefined);
+    if (!dropsVisible) void audio.play().catch(() => undefined);
   };
 
   const fastForward = () => {
@@ -166,7 +169,7 @@ export function MusicPlayerWindow({
           onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
           onCanPlay={(e) => {
-            if (isPlaying) void e.currentTarget.play().catch(() => undefined);
+            if (isPlaying && !dropsVisible) void e.currentTarget.play().catch(() => undefined);
           }}
           onEnded={() => goTo(index + 1)}
         />

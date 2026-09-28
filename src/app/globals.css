@@ -623,6 +623,14 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Shows always paints on near-black. DEV's desktop tokens are dark because
+   its ordinary windows are pale, so this surface must own its foreground. */
+[data-persona="dev"] .shows-type {
+  --_fg: #ffffff;
+  --_fg-muted: #b8bdc7;
+  color: #ffffff;
+}
+
 /* The Four Flows timeline.
    Same problem the Shows window has, and the same fix. Cinzel Decorative is
    an engraved display face with heavy inline detail — beautiful at a title

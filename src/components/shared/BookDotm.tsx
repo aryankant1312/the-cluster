@@ -93,6 +93,23 @@ const EMPTY: Values = {
   message: "",
 };
 
+const EMAIL_PATTERN = /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
+const NAME_PATTERN = /\p{L}/u;
+
+function contactErrors(values: Values): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (!NAME_PATTERN.test(values.contact_name.trim())) {
+    errors.contact_name = "Enter a name using letters.";
+  }
+  if (!EMAIL_PATTERN.test(values.contact_email.trim())) {
+    errors.contact_email = "Enter a valid email address.";
+  }
+  if (values.contact_phone && !/^\d{7,15}$/.test(values.contact_phone)) {
+    errors.contact_phone = "Use 7–15 digits only.";
+  }
+  return errors;
+}
+
 export function BookDotm() {
   const { persona } = usePersona();
   const isDotm = persona === "dotm";
@@ -123,15 +140,23 @@ export function BookDotm() {
 
   const set = (key: keyof Values, v: string) => setValues((p) => ({ ...p, [key]: v }));
   const shows = (f: DetailField) => enquiry !== null && FIELDS_FOR[enquiry].includes(f);
+  const enquiryTypes = isDotm
+    ? ENQUIRY_TYPES
+    : ENQUIRY_TYPES.filter((type) => type !== "interview");
 
   const submit = async () => {
+    const validationErrors = contactErrors(values);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
     setSending(true);
     setErrors({});
     try {
       const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, enquiry_type: enquiry }),
+        body: JSON.stringify({ ...values, enquiry_type: enquiry, source: `${persona}-booking` }),
       });
       const data = (await res.json()) as
         | { ok: true; id: string }
@@ -216,7 +241,7 @@ export function BookDotm() {
                 next, so you only fill in what actually applies.
               </p>
               <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {ENQUIRY_TYPES.map((type) => (
+                {enquiryTypes.map((type) => (
                   <button
                     key={type}
                     type="button"
@@ -365,9 +390,12 @@ export function BookDotm() {
                   type="tel"
                   autoComplete="tel"
                   value={values.contact_phone}
-                  onChange={(v) => set("contact_phone", v)}
+                  onChange={(v) => set("contact_phone", v.replace(/\D/g, "").slice(0, 15))}
+                  error={errors.contact_phone}
                   isDotm={isDotm}
                   hint={FIELD_HINTS.contact_phone}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                 />
               </div>
 
@@ -588,6 +616,8 @@ function Text({
   error,
   required,
   autoComplete,
+  inputMode,
+  pattern,
 }: {
   id: string;
   label: string;
@@ -599,6 +629,8 @@ function Text({
   error?: string;
   required?: boolean;
   autoComplete?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  pattern?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const openDatePicker = () => {
@@ -616,6 +648,8 @@ function Text({
         value={value}
         required={required}
         autoComplete={autoComplete}
+        inputMode={inputMode}
+        pattern={pattern}
         aria-invalid={error ? true : undefined}
         onClick={openDatePicker}
         onChange={(e) => onChange(e.target.value)}

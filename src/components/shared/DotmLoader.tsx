@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { completeWindowLoaderRotation } from "@/lib/window-loader";
 
 /**
  * THE SHARED WINDOW LOADER — the black ball bouncing over the M while the
@@ -11,10 +12,58 @@ import { cn } from "@/lib/utils";
 
 /** How long the fade-out runs. Must match `duration-300` on the root. */
 const FADE_MS = 300;
-/** One complete down-and-up bounce. Kept in sync with globals.css. */
-const BOUNCE_MS = 1200;
-/** Never reveal the loaded surface before the mark has bounced twice. */
-const MIN_VISIBLE_MS = BOUNCE_MS * 2;
+/** The supplied video completes one down-and-up bounce in roughly 1.6s. */
+const BOUNCE_SECONDS = 1.6;
+/** Keep the shared loader brief while still letting the motion read clearly. */
+const DEFAULT_BOUNCE_COUNT = 3;
+
+export function LoaderVideo({
+  label = "Loading",
+  gateKey,
+  bounceCount = DEFAULT_BOUNCE_COUNT,
+  onBounceSequenceComplete,
+}: {
+  label?: string;
+  gateKey?: string;
+  /** Number of complete bounces before a gated window may be revealed. */
+  bounceCount?: number;
+  onBounceSequenceComplete?: () => void;
+}) {
+  const completedSequence = useRef(false);
+
+  const completeSequence = () => {
+    if (completedSequence.current) return;
+    completedSequence.current = true;
+    if (gateKey) completeWindowLoaderRotation(gateKey);
+    onBounceSequenceComplete?.();
+  };
+
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6">
+      <video
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        className="aspect-square w-[min(58vmin,360px)] object-contain"
+        src="/videos/window-loader.mp4"
+        onTimeUpdate={(event) => {
+          const revealAt = Math.max(1, bounceCount) * BOUNCE_SECONDS;
+          if (event.currentTarget.currentTime >= revealAt) completeSequence();
+        }}
+        onEnded={(event) => {
+          // Fallback for browsers that throttle `timeupdate`; never leave a
+          // gated window waiting if the video reaches its natural end.
+          completeSequence();
+          event.currentTarget.currentTime = 0;
+          void event.currentTarget.play().catch(() => undefined);
+        }}
+      />
+      <span className="sr-only">{label}</span>
+    </div>
+  );
+}
 
 export function DotmLoader({
   show,
@@ -48,11 +97,6 @@ export function DotmLoader({
     if (show) setFaded(false);
   }
 
-  useEffect(() => {
-    const timer = setTimeout(() => setMinimumElapsed(true), MIN_VISIBLE_MS);
-    return () => clearTimeout(timer);
-  }, []);
-
   const visible = show || !minimumElapsed;
 
   useEffect(() => {
@@ -75,40 +119,10 @@ export function DotmLoader({
         className,
       )}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse at 18% 22%, rgba(255,255,255,.92) 0%, rgba(255,255,255,.48) 23%, transparent 48%), radial-gradient(ellipse at 78% 68%, rgba(255,255,255,.78) 0%, rgba(225,225,222,.42) 28%, transparent 58%), radial-gradient(circle at 10% 82%, rgba(255,0,51,.20), transparent 28%), radial-gradient(circle at 88% 16%, rgba(201,0,32,.16), transparent 30%), linear-gradient(135deg, rgba(255,255,255,.30), rgba(205,205,202,.12))",
-        }}
+      <LoaderVideo
+        label={label}
+        onBounceSequenceComplete={() => setMinimumElapsed(true)}
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.16] mix-blend-multiply"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(118deg, rgba(30,30,30,.20) 0, rgba(30,30,30,.20) 1px, transparent 1px, transparent 4px)",
-        }}
-      />
-
-      <div className="relative aspect-square w-[min(46vmin,300px)] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.44),rgba(255,255,255,0)_67%)]">
-        {/* `overflow-visible`, as in the source file: the ball leaves the
-            viewBox at the bottom of its drop and would otherwise be clipped. */}
-        <svg
-          viewBox="0 0 1000 1000"
-          className="relative h-full w-full overflow-visible drop-shadow-[0_10px_22px_rgba(0,0,0,0.34)]"
-          aria-hidden="true"
-        >
-          <image href="/images/dotm/loader-mark.png" x="0" y="0" width="1000" height="1000" />
-
-          <g className="dotm-loader-bounce">
-            <circle cx="498" cy="223" r="61" fill="#050505" />
-          </g>
-        </svg>
-      </div>
-
-      <span className="sr-only">{label}</span>
     </div>
   );
 }
@@ -121,10 +135,10 @@ export function DotmLoader({
  * of its own — it *is* the window's contents for as long as the chunk is in
  * flight — so it gets one here rather than at each of the four call sites.
  */
-export function DotmWindowLoader({ label }: { label?: string }) {
+export function DotmWindowLoader({ label, gateKey }: { label?: string; gateKey?: string }) {
   return (
     <div className="relative h-full w-full overflow-hidden bg-transparent">
-      <DotmLoader show label={label} />
+      {gateKey ? <LoaderVideo label={label} gateKey={gateKey} /> : <DotmLoader show label={label} />}
     </div>
   );
 }

@@ -171,8 +171,9 @@ export function DotmWindow({
           drag={movable}
           dragListener={false}
           dragControls={dragControls}
-          dragMomentum={false}
-          dragElastic={0}
+          dragMomentum
+          dragElastic={0.1}
+          dragTransition={{ power: 0.12, timeConstant: 90, bounceStiffness: 520, bounceDamping: 38 }}
           dragConstraints={bounds}
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: closing ? 0 : 1, scale: closing ? 0.94 : 1 }}
@@ -251,7 +252,7 @@ export function DotmWindow({
           className="macos-glass flex flex-col overflow-hidden rounded-[var(--radius-window)] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.35)]"
         >
           <div
-            className="group/lights relative flex shrink-0 cursor-move select-none items-center justify-center border-b border-white/10 px-3 py-2"
+            className="group/lights relative flex shrink-0 cursor-grab active:cursor-grabbing touch-none select-none items-center justify-center border-b border-white/10 px-3 py-3"
             onPointerDown={(event) => {
               if (!movable) return;
               setBounds(desktopDragBounds(shellRef.current));

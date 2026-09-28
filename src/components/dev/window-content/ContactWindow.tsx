@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-type SubscribeStatus = "idle" | "loading" | "done";
+type SubscribeStatus = "idle" | "loading" | "done" | "error";
+const EMAIL_PATTERN = /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
 
 /**
  * What keeps black type readable over an ungraded photograph.
@@ -35,20 +36,36 @@ function LoaderDots() {
 export function ContactWindow({ onBook }: { onBook?: () => void }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<SubscribeStatus>("idle");
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const handleSubscribe = () => {
-    if (status !== "idle" || !email.trim()) return;
+  const handleSubscribe = async () => {
+    if (status === "loading") return;
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      setStatus("error");
+      setMessage("Enter a valid email address.");
+      return;
+    }
     setStatus("loading");
-    const loadTimer = setTimeout(() => {
-      setStatus("done");
-      const resetTimer = setTimeout(() => {
-        setStatus("idle");
+    setMessage(null);
+    try {
+      const response = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "dev-contact" }),
+      });
+      const body = (await response.json()) as { ok: boolean; error?: string };
+      if (body.ok) {
+        setStatus("done");
+        setMessage("You're on the list.");
         setEmail("");
-      }, 1800);
-      timersRef.current.push(resetTimer);
-    }, 3500);
-    timersRef.current.push(loadTimer);
+      } else {
+        setStatus("error");
+        setMessage(body.error ?? "That didn't go through.");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Couldn't reach the server. Try again in a moment.");
+    }
   };
 
   return (
@@ -199,20 +216,30 @@ export function ContactWindow({ onBook }: { onBook?: () => void }) {
               Drops, show dates and the occasional easter egg.
             </p>
           </div>
-          <div className="flex gap-2">
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSubscribe();
+            }}
+          >
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (status === "error") setStatus("idle");
+              }}
               placeholder="mymail@example.com"
-              disabled={status !== "idle"}
+              disabled={status === "loading"}
               autoComplete="email"
+              required
+              aria-invalid={status === "error" ? true : undefined}
               className="win98-border bg-white flex-1 min-w-0 px-3 py-2.5 text-sm text-black placeholder:text-black/40 focus:outline-none disabled:opacity-60"
             />
             <button
-              type="button"
-              onClick={handleSubscribe}
-              disabled={status !== "idle" || !email.trim()}
+              type="submit"
+              disabled={status === "loading" || !email.trim()}
               className={cn(
                 // Unbolded. Pixelpurl ships a single weight, so `font-bold`
                 // here was the browser synthesising a heavier face by smearing
@@ -228,9 +255,18 @@ export function ContactWindow({ onBook }: { onBook?: () => void }) {
             >
               {status === "loading" && <LoaderDots />}
               {status === "done" && "Done!"}
-              {status === "idle" && "Subscribe"}
+              {(status === "idle" || status === "error") && "Subscribe"}
             </button>
-          </div>
+          </form>
+          {message && (
+            <p
+              role="status"
+              aria-live="polite"
+              className={cn("font-body text-xs", status === "error" ? "text-red-700" : "text-black/60")}
+            >
+              {message}
+            </p>
+          )}
         </div>
       </section>
     </div>

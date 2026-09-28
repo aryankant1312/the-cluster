@@ -30,6 +30,7 @@ const PHONE = "+91 9667374331";
 const INSTAGRAM_URL = "https://www.instagram.com/devilonthemic/";
 
 type SubscribeState = "idle" | "sending" | "done" | "error";
+const EMAIL_PATTERN = /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
 
 export function ContactCard({ onBook }: { onBook?: () => void }) {
   const [email, setEmail] = useState("");
@@ -49,7 +50,12 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
   };
 
   const subscribe = async () => {
-    if (state === "sending" || !email.trim()) return;
+    if (state === "sending") return;
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      setState("error");
+      setMessage("Enter a valid email address.");
+      return;
+    }
     setState("sending");
     setMessage(null);
     try {

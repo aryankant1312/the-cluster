@@ -206,7 +206,9 @@ export function DevWindow({
       drag={movable}
       dragListener={false}
       dragControls={dragControls}
-      dragMomentum={false}
+      dragMomentum
+      dragElastic={0.1}
+      dragTransition={{ power: 0.12, timeConstant: 90, bounceStiffness: 520, bounceDamping: 38 }}
       dragConstraints={bounds}
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{
@@ -300,7 +302,7 @@ export function DevWindow({
       className="win98-border bg-persona-surface flex flex-col"
     >
       <div
-        className="bg-persona-titlebar text-white flex cursor-move items-center justify-between px-1.5 py-1 select-none"
+        className="bg-persona-titlebar text-white flex cursor-grab active:cursor-grabbing touch-none items-center justify-between px-2 py-2 select-none"
         onPointerDown={(event) => {
           if (!movable) return;
           setBounds(desktopDragBounds(shellRef.current));

@@ -18,6 +18,7 @@ import { WindowLoading } from "@/components/window-manager/WindowLoading";
 import { DotmWindowLoader } from "@/components/shared/DotmLoader";
 import { Blink, DOTM_OPEN_MS } from "@/components/shared/Blink";
 import { disarmBlink, isBlinkArmed } from "@/lib/blink-gate";
+import { withWindowLoader } from "@/lib/window-loader";
 
 /**
  * WINDOW CONTENT IS CODE-SPLIT. Read this before adding a static import above.
@@ -51,16 +52,16 @@ const DotmMusicWheel = dynamic(
   { ssr: false, loading: () => <WindowLoading label="Music" /> },
 );
 const ShowsExperience = dynamic(
-  () => import("@/components/dotm/window-content/ShowsExperience").then((m) => m.ShowsExperience),
-  { ssr: false, loading: () => <WindowLoading label="Shows" /> },
+  () => withWindowLoader("dotm-shows", () => import("@/components/dotm/window-content/ShowsExperience")).then((m) => m.ShowsExperience),
+  { ssr: false, loading: () => <WindowLoading label="Shows" gateKey="dotm-shows" /> },
 );
 const ShootOnSightWindow = dynamic(
   () => import("@/components/shared/ShootOnSightWindow").then((m) => m.ShootOnSightWindow),
   { ssr: false, loading: () => <DotmWindowLoader label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
-  () => import("@/components/shared/ClusterWallWindow").then((m) => m.ClusterWallWindow),
-  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" /> },
+  () => withWindowLoader("dotm-cluster-wall", () => import("@/components/shared/ClusterWallWindow")).then((m) => m.ClusterWallWindow),
+  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" gateKey="dotm-cluster-wall" /> },
 );
 /**
  * Drops shows the teaser, not the shop.
@@ -71,8 +72,8 @@ const ClusterWallWindow = dynamic(
  * worse answer than an honest empty room.
  */
 const ComingSoonDrop = dynamic(
-  () => import("@/components/shared/ComingSoonDrop").then((m) => m.ComingSoonDrop),
-  { ssr: false, loading: () => <WindowLoading label="Drops" /> },
+  () => withWindowLoader("dotm-drops", () => import("@/components/shared/ComingSoonDrop")).then((m) => m.ComingSoonDrop),
+  { ssr: false, loading: () => <WindowLoading label="Drops" gateKey="dotm-drops" /> },
 );
 const LiveStats = dynamic(
   () => import("@/components/shared/LiveStats").then((m) => m.LiveStats),
@@ -80,14 +81,14 @@ const LiveStats = dynamic(
 );
 const DotmPortfolioWindow = dynamic(
   () =>
-    import("@/components/dotm/window-content/DotmPortfolioWindow").then(
+    withWindowLoader("dotm-portfolio", () => import("@/components/dotm/window-content/DotmPortfolioWindow")).then(
       (m) => m.DotmPortfolioWindow,
     ),
-  { ssr: false, loading: () => <WindowLoading label="Portfolio" /> },
+  { ssr: false, loading: () => <WindowLoading label="Portfolio" gateKey="dotm-portfolio" /> },
 );
 const DotmVaultWindow = dynamic(
-  () => import("@/components/dotm/window-content/DotmVaultWindow").then((m) => m.DotmVaultWindow),
-  { ssr: false, loading: () => <WindowLoading label="The Vault" /> },
+  () => withWindowLoader("dotm-vault", () => import("@/components/dotm/window-content/DotmVaultWindow")).then((m) => m.DotmVaultWindow),
+  { ssr: false, loading: () => <WindowLoading label="The Vault" gateKey="dotm-vault" /> },
 );
 
 export default function DotmDesktopPage() {

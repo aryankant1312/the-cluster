@@ -105,8 +105,8 @@ export const statPanels: StatPanel[] = [
     label: "YouTube",
     accent: "#ff0033",
     onAccent: "#ffffff",
-    blurb: "The visual HQ: high-production visuals for a locked-in audience",
-    goal: "For boosting discoverability",
+    blurb: "Where the music becomes a visual experience",
+    goal: "road to 25k subscribers",
     metrics: [
       {
         id: "yt-subscribers",
@@ -139,8 +139,8 @@ export const statPanels: StatPanel[] = [
     label: "Instagram",
     accent: "#d62976",
     onAccent: "#ffffff",
-    blurb: "Where lifestyle meets discography",
-    goal: "For building long-term audience",
+    blurb: "where the artist meets the audience",
+    goal: "road to 20k followers",
     period: ROLLING_WINDOW,
     action: {
       label: "Follow DOTM",
@@ -172,8 +172,8 @@ export const statPanels: StatPanel[] = [
     label: "Spotify",
     accent: "#1ed760",
     onAccent: "#062d16",
-    blurb: "Pure catalog depth, high save rates, and endless repeat plays",
-    goal: "For boosting discoverability",
+    blurb: "where the music speaks for itself",
+    goal: "road to 100K listeners",
     period: ROLLING_WINDOW,
     action: {
       label: "Follow DOTM",

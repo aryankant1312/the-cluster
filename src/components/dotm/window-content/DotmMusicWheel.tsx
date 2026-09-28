@@ -116,6 +116,7 @@ export function DotmMusicWheel() {
   const reduceMotion = useReducedMotion();
   const wm = useWindowManager();
   const minimized = wm.isMinimized("music-player");
+  const dropsVisible = wm.isOpen("merch") && !wm.isMinimized("merch");
   const [paneRef, pane] = useBoxSize<HTMLDivElement>();
 
   /**
@@ -185,9 +186,9 @@ export function DotmMusicWheel() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !src) return;
-    if (isPlaying) void audio.play().catch(() => undefined);
+    if (isPlaying && !dropsVisible) void audio.play().catch(() => undefined);
     else audio.pause();
-  }, [isPlaying, src]);
+  }, [isPlaying, src, dropsVisible]);
 
   // The window remains mounted while minimized. Reassert playback after the
   // shell enters its parked state so browsers that suspend media during the
@@ -195,8 +196,8 @@ export function DotmMusicWheel() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!minimized || !isPlaying || !src || !audio) return;
-    void audio.play().catch(() => undefined);
-  }, [minimized, isPlaying, src]);
+    if (!dropsVisible) void audio.play().catch(() => undefined);
+  }, [minimized, isPlaying, src, dropsVisible]);
 
   const select = (next: number) => {
     const wrapped = (next + tracks.length) % tracks.length;
@@ -270,7 +271,7 @@ export function DotmMusicWheel() {
     audio.currentTime = time;
     setCurrentTime(time);
     setIsPlaying(true);
-    void audio.play().catch(() => undefined);
+    if (!dropsVisible) void audio.play().catch(() => undefined);
   };
 
   /** Spotify's duration stands in for the seeker's clock until metadata lands. */
@@ -321,7 +322,7 @@ export function DotmMusicWheel() {
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
           // The retry that makes a freshly selected record actually start.
           onCanPlay={(e) => {
-            if (isPlaying) void e.currentTarget.play().catch(() => undefined);
+            if (isPlaying && !dropsVisible) void e.currentTarget.play().catch(() => undefined);
           }}
           onEnded={() => select(index + 1)}
         />

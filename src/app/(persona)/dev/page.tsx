@@ -19,6 +19,7 @@ import { DesktopMetrics } from "@/components/shared/DesktopMetrics";
 import { DevDesktopWallpaper } from "@/components/dev/DevDesktopWallpaper";
 import { WindowLoading } from "@/components/window-manager/WindowLoading";
 import { DotmWindowLoader } from "@/components/shared/DotmLoader";
+import { withWindowLoader } from "@/lib/window-loader";
 
 /**
  * WINDOW CONTENT IS CODE-SPLIT. Read this before adding a static import above.
@@ -39,12 +40,12 @@ import { DotmWindowLoader } from "@/components/shared/DotmLoader";
  * the entry point to the player.
  */
 const PortfolioWindow = dynamic(
-  () => import("@/components/dev/window-content/PortfolioWindow").then((m) => m.PortfolioWindow),
-  { ssr: false, loading: () => <WindowLoading label="Portfolio" /> },
+  () => withWindowLoader("dev-portfolio", () => import("@/components/dev/window-content/PortfolioWindow")).then((m) => m.PortfolioWindow),
+  { ssr: false, loading: () => <WindowLoading label="Portfolio" gateKey="dev-portfolio" /> },
 );
 const VaultWindow = dynamic(
-  () => import("@/components/dev/window-content/VaultWindow").then((m) => m.VaultWindow),
-  { ssr: false, loading: () => <WindowLoading label="The Vault" /> },
+  () => withWindowLoader("dev-vault", () => import("@/components/dev/window-content/VaultWindow")).then((m) => m.VaultWindow),
+  { ssr: false, loading: () => <WindowLoading label="The Vault" gateKey="dev-vault" /> },
 );
 const MusicPlayerWindow = dynamic(
   () =>
@@ -61,8 +62,8 @@ const StoryWindow = dynamic(
  * putting it live. See the matching note on the DOTM desktop.
  */
 const ComingSoonDrop = dynamic(
-  () => import("@/components/shared/ComingSoonDrop").then((m) => m.ComingSoonDrop),
-  { ssr: false, loading: () => <WindowLoading label="Drops" /> },
+  () => withWindowLoader("dev-drops", () => import("@/components/shared/ComingSoonDrop")).then((m) => m.ComingSoonDrop),
+  { ssr: false, loading: () => <WindowLoading label="Drops" gateKey="dev-drops" /> },
 );
 const LiveStats = dynamic(
   () => import("@/components/shared/LiveStats").then((m) => m.LiveStats),
@@ -73,12 +74,12 @@ const ShootOnSightWindow = dynamic(
   { ssr: false, loading: () => <DotmWindowLoader label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
-  () => import("@/components/shared/ClusterWallWindow").then((m) => m.ClusterWallWindow),
-  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" /> },
+  () => withWindowLoader("dev-cluster-wall", () => import("@/components/shared/ClusterWallWindow")).then((m) => m.ClusterWallWindow),
+  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" gateKey="dev-cluster-wall" /> },
 );
 const ShowsExperience = dynamic(
-  () => import("@/components/dotm/window-content/ShowsExperience").then((m) => m.ShowsExperience),
-  { ssr: false, loading: () => <WindowLoading label="Shows" /> },
+  () => withWindowLoader("dev-shows", () => import("@/components/dotm/window-content/ShowsExperience")).then((m) => m.ShowsExperience),
+  { ssr: false, loading: () => <WindowLoading label="Shows" gateKey="dev-shows" /> },
 );
 import {
   MyMusicImageIcon,

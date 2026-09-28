@@ -1,5 +1,7 @@
 "use client";
 
+import { LoaderVideo } from "@/components/shared/DotmLoader";
+
 /**
  * What a window shows while its code is on the way.
  *
@@ -14,22 +16,14 @@
  * is mounted inside rather than choosing its own, which is why the two
  * desktops get visibly different loaders out of one component.
  */
-export function WindowLoading({ label }: { label?: string }) {
+export function WindowLoading({ label, gateKey }: { label?: string; gateKey?: string }) {
   return (
     <div
       role="status"
       aria-live="polite"
-      className="flex h-full w-full flex-col items-center justify-center gap-4 px-6"
+      className="h-full w-full overflow-hidden bg-black"
     >
-      <p className="font-chrome text-xs uppercase tracking-[0.35em] text-persona-fg-muted">
-        {label ? `Opening ${label}` : "Opening"}
-      </p>
-
-      {/* A moving segment rather than a fill, so it never implies a percentage
-          it does not know. */}
-      <div className="h-px w-40 overflow-hidden bg-persona-fg-muted/25">
-        <div className="window-loading-bar h-full w-1/3 bg-persona-accent" />
-      </div>
+      <LoaderVideo label={label ? `Opening ${label}` : "Opening"} gateKey={gateKey} />
     </div>
   );
 }

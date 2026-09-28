@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 const DotmShowsMap = dynamic(() => import("./DotmShowsMap").then((m) => m.DotmShowsMap), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center font-chrome text-xs tracking-widest text-fg-muted">
+    <div className="flex h-full w-full items-center justify-center font-chrome text-xs tracking-widest text-white/55">
       LOADING MAP…
     </div>
   ),
@@ -122,11 +122,11 @@ function PastView() {
                 <span className="font-headline text-base tracking-wide">
                   {show.city[locale]}
                 </span>
-                <span className="text-[10px] tabular-nums text-fg-muted">
+                <span className="text-[10px] tabular-nums text-white/55">
                   {formatDate(show.date)}
                 </span>
               </div>
-              <p className="relative mt-0.5 truncate text-xs text-fg-muted">
+              <p className="relative mt-0.5 truncate text-xs text-white/55">
                 {show.venue ?? "VENUE TBD"}
               </p>
 
@@ -379,11 +379,11 @@ function NextCityTiles() {
             <span className="font-headline text-base tracking-wide">
               {show.city[locale]}
             </span>
-            <span className="text-[10px] tabular-nums text-fg-muted">
+            <span className="text-[10px] tabular-nums text-white/55">
               {formatDate(show.date)}
             </span>
           </div>
-          <p className="relative mt-0.5 truncate text-xs text-fg-muted">
+          <p className="relative mt-0.5 truncate text-xs text-white/55">
             {show.venue ?? "VENUE TBD"}
           </p>
 
@@ -477,7 +477,7 @@ function VoteView() {
         {/* ── LEFT: the dates that exist ──────────────────────────────── */}
         <section className="flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pr-1">
           <div className="text-center">
-            <p className="font-chrome text-[11px] tracking-[0.24em] text-fg-muted">
+            <p className="font-chrome text-[11px] tracking-[0.24em] text-white/55">
               NEXT CITY
             </p>
             <p className="mt-1 font-chrome text-[10px] tracking-[0.2em] text-white/30">
@@ -490,7 +490,7 @@ function VoteView() {
         {/* ── RIGHT: the ranking and the vote ─────────────────────────── */}
         <section className="flex min-h-0 flex-col gap-7 lg:overflow-y-auto lg:pr-1">
         <div className="text-center">
-          <p className="font-chrome text-[11px] tracking-[0.24em] text-fg-muted">
+          <p className="font-chrome text-[11px] tracking-[0.24em] text-white/55">
             WHERE SHOULD DOTM PLAY NEXT?
           </p>
           <p className="mt-1 font-chrome text-[10px] tracking-[0.2em] text-white/30">
@@ -724,7 +724,7 @@ function VoteView() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-3">
-                    <VoteCount votes={votes} className="text-xs text-persona-fg" />
+                    <VoteCount votes={votes} className="text-xs text-white" />
 
                     {voted ? (
                       <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/50 bg-emerald-400/10 px-2.5 py-1 font-chrome text-[10px] tracking-widest text-emerald-300 shadow-[0_0_14px_-2px_rgba(52,211,153,0.55)]">
@@ -732,7 +732,7 @@ function VoteView() {
                         VOTED
                       </span>
                     ) : (
-                      <span className="rounded-full border border-white/15 px-2.5 py-1 font-chrome text-[10px] tracking-widest text-fg-muted transition-[color,border-color,box-shadow,background-color] duration-200 group-hover:border-persona-accent group-hover:bg-persona-accent/15 group-hover:text-white group-hover:shadow-[0_0_16px_-1px_rgba(255,47,77,0.85)] group-focus-visible:border-persona-accent group-focus-visible:text-white">
+                      <span className="rounded-full border border-white/15 px-2.5 py-1 font-chrome text-[10px] tracking-widest text-white/55 transition-[color,border-color,box-shadow,background-color] duration-200 group-hover:border-persona-accent group-hover:bg-persona-accent/15 group-hover:text-white group-hover:shadow-[0_0_16px_-1px_rgba(255,47,77,0.85)] group-focus-visible:border-persona-accent group-focus-visible:text-white">
                         VOTE
                       </span>
                     )}
@@ -850,7 +850,7 @@ export function ShowsExperience() {
   const [voteSeen, setVoteSeen] = useState(false);
 
   return (
-    <div className="shows-type flex h-full w-full flex-col gap-4 overflow-hidden bg-[#0b0b0c] p-5">
+    <div className="shows-type flex h-full w-full flex-col gap-4 overflow-hidden bg-[#0b0b0c] p-5 text-white">
       {/*
         Three tracks, not two ends. `justify-between` put the switch hard
         against the right edge, where it read as a setting attached to nothing;
@@ -870,7 +870,7 @@ export function ShowsExperience() {
       <div className="grid shrink-0 grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_auto_1fr]">
         <div>
           <h2 className="font-headline text-3xl leading-none tracking-wide">SHOWS</h2>
-          <p className="mt-1.5 font-chrome text-[11px] tracking-[0.2em] text-fg-muted">
+          <p className="mt-1.5 font-chrome text-[11px] tracking-[0.2em] text-white/55">
             {past.length} STOPS · LIVE ACROSS INDIA
           </p>
         </div>
@@ -883,7 +883,7 @@ export function ShowsExperience() {
               "rounded-full px-4 py-1.5 font-chrome text-[11px] tracking-widest transition-colors",
               view === "past"
                 ? "bg-persona-accent text-white"
-                : "text-fg-muted hover:text-persona-fg",
+                : "text-white/55 hover:text-white",
             )}
           >
             PAST
@@ -899,7 +899,7 @@ export function ShowsExperience() {
               "relative rounded-full px-4 py-1.5 font-chrome text-[11px] tracking-widest transition-colors",
               view === "vote"
                 ? "bg-persona-accent text-white"
-                : "text-fg-muted hover:text-persona-fg",
+                : "text-white/55 hover:text-white",
             )}
           >
             NEXT CITY
