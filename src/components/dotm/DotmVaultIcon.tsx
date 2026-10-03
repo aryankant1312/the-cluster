@@ -51,6 +51,7 @@ const COIN_HIDDEN_FOR = [
   "contact",
   "welcome",
   "portfolio",
+  "services",
   "music-player",
   "shows",
   "merch",
@@ -108,6 +109,7 @@ export function DotmVaultIcon() {
   return (
     <motion.div
       ref={ref}
+      data-desktop-obstacle
       drag
       dragMomentum={false}
       dragElastic={0}

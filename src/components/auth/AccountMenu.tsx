@@ -83,7 +83,7 @@ export function AccountMenu({
           "flex items-center gap-2 focus:outline-none focus-visible:ring-2",
           isDotm
             ? "rounded-full focus-visible:ring-white"
-            : "win98-border win98-press bg-persona-surface px-2 py-1 focus-visible:ring-[#0a2f5c]",
+            : "win98-border win98-press bg-persona-surface px-3 py-1.5 focus-visible:ring-[#0a2f5c]",
         )}
       >
         <Avatar user={user} initial={initial} isDotm={isDotm} />
@@ -200,7 +200,7 @@ function Avatar({
   initial: string;
   isDotm: boolean;
 }) {
-  const shape = isDotm ? "h-7 w-7 rounded-full" : "h-6 w-6";
+  const shape = isDotm ? "h-9 w-9 rounded-full" : "h-8 w-8";
 
   if (user.picture) {
     return (
@@ -211,8 +211,8 @@ function Avatar({
       <img
         src={user.picture}
         alt=""
-        width={28}
-        height={28}
+        width={36}
+        height={36}
         referrerPolicy="no-referrer"
         className={cn(shape, "shrink-0 object-cover", isDotm && "ring-1 ring-white/25")}
       />
@@ -224,7 +224,7 @@ function Avatar({
       aria-hidden="true"
       className={cn(
         shape,
-        "flex shrink-0 items-center justify-center font-chrome text-[12px]",
+        "flex shrink-0 items-center justify-center font-chrome text-sm",
         isDotm ? "bg-[#ff2244] text-black" : "win98-border bg-[#0a2f5c] text-white",
       )}
     >

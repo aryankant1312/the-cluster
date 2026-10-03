@@ -37,14 +37,17 @@ export function PersonaTopBar() {
         persona === "dev" && "win98-border",
       )}
     >
-      <Link href={`/${persona}`} className="font-chrome text-lg sm:text-xl tracking-widest">
+      <Link
+        href="/choose-face"
+        className="font-chrome text-lg sm:text-xl tracking-widest"
+      >
         THE CLUSTER
       </Link>
       <SpectrumCountdown className="flex-1" />
       {/* The account, top right — the one place both faces now agree on. It
           renders nothing while signed out, so the bar's geometry before the
           first session read is exactly what it was. */}
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-4 sm:gap-5">
         <NotificationMenu skin={persona} />
         <AccountMenu skin={persona} align="right" side="down" />
       </div>

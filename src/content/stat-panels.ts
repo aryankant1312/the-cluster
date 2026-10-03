@@ -12,7 +12,7 @@
  *   "api"    — collected automatically every two days by
  *              `scripts/sync-stats.mjs`, whether from a documented endpoint
  *              (YouTube, Spotify catalogue) or by reading a public page
- *              (Instagram followers, Spotify monthly listeners). The site
+ *              (Instagram followers, Spotify followers). The site
  *              itself calls nothing; it reads what that job stored.
  *   "manual" — reachable by neither. YouTube Studio's unique viewers,
  *              Instagram's insights and Spotify-for-Artists' playlist adds
@@ -73,6 +73,8 @@ export function changeKeyFor(metricKey: string): string {
 export interface PanelAction {
   label: string;
   href: string;
+  /** Bracketed community prompt shown only while the action is hovered/focused. */
+  hoverLabel: string;
 }
 
 export interface StatPanel {
@@ -84,8 +86,10 @@ export interface StatPanel {
   onAccent: string;
   /** One line under the panel title. */
   blurb: string;
-  /** Strategic goal description for the platform. */
-  goal?: string;
+  /** The next follower/subscriber threshold shown in the animated footer. */
+  milestone: number;
+  /** The live follower/subscriber figure that fills the milestone bar. */
+  milestoneKey: string;
   /**
    * The window these figures are read over, set above them. Omitted where
    * the figures are lifetime totals — labelling a running total "last 28
@@ -106,7 +110,8 @@ export const statPanels: StatPanel[] = [
     accent: "#ff0033",
     onAccent: "#ffffff",
     blurb: "Where the music becomes a visual experience",
-    goal: "road to 25k subscribers",
+    milestone: 25_000,
+    milestoneKey: "youtube_subscribers",
     metrics: [
       {
         id: "yt-subscribers",
@@ -128,6 +133,7 @@ export const statPanels: StatPanel[] = [
     ],
     action: {
       label: "Subscribe on YouTube",
+      hoverLabel: "[ HELP US HIT 25K ↗ ]",
       // `sub_confirmation=1` opens YouTube with the subscribe dialog already
       // raised, so the button does the thing it says rather than dropping the
       // visitor on a channel page to find it themselves.
@@ -140,10 +146,12 @@ export const statPanels: StatPanel[] = [
     accent: "#d62976",
     onAccent: "#ffffff",
     blurb: "where the artist meets the audience",
-    goal: "road to 20k followers",
+    milestone: 20_000,
+    milestoneKey: "instagram_followers",
     period: ROLLING_WINDOW,
     action: {
-      label: "Follow DOTM",
+      label: "Follow on Instagram",
+      hoverLabel: "[ JOIN THE CLUSTER ↗ ]",
       href: "https://www.instagram.com/devilonthemic/",
     },
     metrics: [
@@ -173,10 +181,12 @@ export const statPanels: StatPanel[] = [
     accent: "#1ed760",
     onAccent: "#062d16",
     blurb: "where the music speaks for itself",
-    goal: "road to 100K listeners",
+    milestone: 100_000,
+    milestoneKey: "spotify_monthly_listeners",
     period: ROLLING_WINDOW,
     action: {
-      label: "Follow DOTM",
+      label: "Listen on Spotify",
+      hoverLabel: "[ LISTEN ON SPOTIFY ↗ ]",
       href: "https://open.spotify.com/artist/2AL0XQ1mbnWU5xVR6R4KRa",
     },
     metrics: [
@@ -187,10 +197,6 @@ export const statPanels: StatPanel[] = [
         key: "spotify_monthly_listeners",
         label: "Monthly listeners",
         description: "Distinct listeners in the window, as Spotify counts them.",
-        // Collected, but by a headless browser rather than an endpoint: the
-        // figure exists nowhere in the Web API at any access tier, and the
-        // artist page is client-rendered, so neither the raw HTML nor the
-        // /embed/ JSON carries it.
         source: "api",
       },
       {
@@ -205,8 +211,13 @@ export const statPanels: StatPanel[] = [
 ];
 
 /** Every key these panels read, for the API's single batched resolve. */
-export const PANEL_STAT_KEYS: string[] = statPanels.flatMap((panel) =>
-  panel.metrics.map((metric) => metric.key),
+export const PANEL_STAT_KEYS: string[] = Array.from(
+  new Set(
+    statPanels.flatMap((panel) => [
+      panel.milestoneKey,
+      ...panel.metrics.map((metric) => metric.key),
+    ]),
+  ),
 );
 
 /**

@@ -50,6 +50,18 @@ const FPS = 25;
 
 const JOBS = [
   {
+    // DEV's Services desktop launcher: a music workstation on a white card.
+    // The desktop container is already `iconBoxVariant="none"`, so the square
+    // users can see is part of the clip itself. Key the card out and keep the
+    // black/cyan artwork as a transparent looping glyph.
+    source: "music.mp4",
+    out: join(APP, "public", "images", "dev", "services-icon.webp"),
+    args: [
+      "-vf",
+      `colorkey=0xFFFFFF:0.10:0.02,format=rgba,fps=${FPS},scale=${SIZE}:${SIZE}`,
+    ],
+  },
+  {
     source: "lockers.mp4",
     out: join(APP, "public", "images", "dev", "vault-icon.webp"),
     // Keep the artwork's colours; drop only the white card behind it.

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clusterWallTiles } from "@/content/cluster-wall.generated";
-import { DotmLoader } from "@/components/shared/DotmLoader";
+import { useWindowLoadGate } from "@/components/window-manager/WindowLoadBoundary";
 import { cn } from "@/lib/utils";
 
 interface Tally {
@@ -19,6 +19,7 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
   const [mine, setMine] = useState<Record<string, Position>>({});
 
   const [ordered, setOrdered] = useState(false);
+  useWindowLoadGate(!ordered);
 
   const [audible, setAudible] = useState<string | null>(null);
   const [volumeMap, setVolumeMap] = useState<Record<string, number>>({});
@@ -114,15 +115,9 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
   return (
     // `relative`, so the loader below has something to be `inset-0` of.
     <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-black">
-      {/*
-        THE WALL'S OWN LOADER, over the wall rather than instead of it.
-
-        `ordered` is the right signal and not an approximation of one: it flips
-        when the scores land, and the scores are what the wall's arrangement is
-        derived from, so it is the exact moment there is something correct to
-        look at. Until then the grid remains visible beneath the shared blur,
-        so the landing page itself supplies the loader's background.
-      */}
+      {/* `ordered` holds the owning window's loader gate. It does not render a
+          second loader here: the window keeps one video mounted continuously
+          while code readiness hands off to vote/order readiness. */}
       {error && (
         <div role="status" className="p-3 text-sm text-white">
           {error}{" "}
@@ -131,8 +126,6 @@ export function ClusterWallGrid({ isDotm }: { isDotm: boolean }) {
           </button>
         </div>
       )}
-      <DotmLoader show={!ordered} label="Loading the Cluster Wall" />
-
       {/* Held back until the scores land, so the wall is laid out once. See
           `ordered` above. The fade is what makes the wait read as the wall
           arriving rather than as a stall. */}

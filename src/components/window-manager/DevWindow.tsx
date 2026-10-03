@@ -11,6 +11,7 @@ import {
   useTopBarInset,
 } from "./window-geometry";
 import { cn } from "@/lib/utils";
+import { WindowLoadBoundary } from "./WindowLoadBoundary";
 
 const MENU_ITEMS = ["File", "Edit", "View", "Go", "Help"];
 
@@ -138,8 +139,17 @@ export function DevWindow({
     if (!isOpen || !movable) return;
     const measure = () => setBounds(desktopDragBounds(shellRef.current));
     measure();
+    const observer = new ResizeObserver(measure);
+    if (shellRef.current) observer.observe(shellRef.current);
+    const topBar = document.querySelector<HTMLElement>(".persona-topbar");
+    if (topBar) observer.observe(topBar);
+    const taskbar = document.querySelector<HTMLElement>("[data-dev-taskbar]");
+    if (taskbar) observer.observe(taskbar);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, [isOpen, movable]);
 
   // Declared before the early return for the same reason the hooks are: the
@@ -206,10 +216,10 @@ export function DevWindow({
       drag={movable}
       dragListener={false}
       dragControls={dragControls}
-      dragMomentum
-      dragElastic={0.1}
-      dragTransition={{ power: 0.12, timeConstant: 90, bounceStiffness: 520, bounceDamping: 38 }}
+      dragMomentum={false}
+      dragElastic={0}
       dragConstraints={bounds}
+      onDragStart={() => setBounds(desktopDragBounds(shellRef.current))}
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{
         opacity: closing ? 0 : 1,
@@ -394,7 +404,7 @@ export function DevWindow({
       )}
       <div
         className={cn(
-          "font-body text-sm text-black",
+          "relative font-body text-sm text-black",
           fullSurface ? "overflow-hidden" : "win98-sky p-3 overflow-auto",
           shellHeight === undefined ? "max-h-[60vh]" : "flex-1 min-h-0",
         )}
@@ -408,7 +418,9 @@ export function DevWindow({
             : undefined),
         }}
       >
-        {children}
+        <WindowLoadBoundary label={`Opening ${title}`}>
+          {children}
+        </WindowLoadBoundary>
       </div>
       <div className="self-end w-3 h-3 mr-0.5 mb-0.5 border-r-2 border-b-2 border-black/50" />
     </motion.div>

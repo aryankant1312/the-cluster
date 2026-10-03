@@ -9,13 +9,9 @@ import { trackArtwork, tracks } from "@/content/tracks";
 import { MagnificationDock, type DockItemData } from "./MagnificationDock";
 import {
   DotmTile,
-  ShootOnSightTile,
   ContactTile,
-  PortfolioTile,
-  NotesTile,
   MusicTile,
   ShowsTile,
-  DropsTile,
   StatsTile,
 } from "./dock-tiles";
 
@@ -50,20 +46,16 @@ export function Dock() {
    * The row, left to right. This array IS the dock's layout — reordering here
    * is the only thing that moves a tile.
    *
-   * `bare` marks the two tiles whose artwork is a transparent glyph rather than
+   * `bare` marks tiles whose artwork is a transparent glyph rather than
    * a full-bleed plate. See `DockItemData.bare`: on those, the rounded ring the
    * others wear outlines an empty box instead of an icon.
    */
   const items: DockItemData[] = [
     { icon: <DotmTile />, label: "Cluster Wall", onClick: open("cluster-wall") },
-    { icon: <ShootOnSightTile />, label: "Shoot at Site", onClick: open("shoot-on-sight") },
     { icon: <MusicTile />, label: "Music", onClick: open("music-player") },
-    { icon: <ShowsTile />, label: "Shows", onClick: open("shows") },
-    { icon: <DropsTile />, label: "Drops", onClick: open("merch") },
+    { icon: <ShowsTile />, label: "Shows", onClick: open("shows"), bare: true },
     { icon: <StatsTile />, label: "Live Stats", onClick: open("stats"), bare: true },
-    { icon: <PortfolioTile />, label: "Portfolio", onClick: open("portfolio") },
     { icon: <ContactTile />, label: "Contact", onClick: open("contact"), bare: true },
-    { icon: <NotesTile />, label: "Notes", onClick: open("notes") },
   ];
 
   /**
@@ -97,7 +89,7 @@ export function Dock() {
 
   return (
     <>
-      <div className="fixed bottom-4 inset-x-0 z-[200] flex justify-center pointer-events-none px-3">
+      <div className="pointer-events-none fixed bottom-4 left-0 right-0 z-[200] flex justify-center px-3 max-[1100px]:right-[280px]">
         {/* `data-desktop-obstacle` marks this pill as somewhere draggable
             desktop furniture may not be parked — see `pushOutOfObstacles` in
             window-geometry. It goes on the pill and not on the full-width row

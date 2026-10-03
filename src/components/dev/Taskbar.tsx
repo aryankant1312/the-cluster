@@ -18,6 +18,7 @@ import {
   VaultTrayIcon,
   ClusterWallIcon,
   DropsTrayIcon,
+  ServicesTrayIcon,
   StatsTrayIcon,
 } from "./icons";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,11 @@ const WINDOW_TILE_ICONS: Record<string, ReactNode> = {
       <RecycleBinTrayIcon />
     </span>
   ),
+  services: (
+    <span className="shrink-0">
+      <ServicesTrayIcon />
+    </span>
+  ),
 };
 
 const INSTAGRAM_URL = "https://www.instagram.com/devilonthemic/";
@@ -75,7 +81,7 @@ export function Taskbar() {
   const t = useTranslations("nav");
 
   /**
-   * Three launchers, not ten. The strip had grown to hold every surface on
+   * A compact launcher set, not a second Start menu. The strip had grown to hold every surface on
    * the desktop, which made it a second Start menu rather than a shortcut row
    * — and Music, Portfolio and Cluster Wall already have desktop icons a
    * couple of inches above it, while Shows and Book are one click inside
@@ -92,6 +98,12 @@ export function Taskbar() {
     onClick: () => void;
     primary?: boolean;
   }> = [
+    {
+      label: "Services",
+      icon: <ServicesTrayIcon />,
+      onClick: () => wm.openWindow("services"),
+      primary: true,
+    },
     {
       label: "Drops",
       icon: <DropsTrayIcon />,
@@ -137,7 +149,7 @@ export function Taskbar() {
         the narrow viewports that genuinely need it and takes the gutter away;
         see `globals.css`.
       */}
-      <div className="no-scrollbar flex items-center gap-0.5 overflow-x-auto border-l border-black/30 pl-2">
+      <div className="no-scrollbar flex min-w-0 max-w-[55vw] items-center gap-0.5 overflow-x-auto border-l border-black/30 pl-2">
         {quickLaunch.map((item) => (
           <button
             key={item.label}

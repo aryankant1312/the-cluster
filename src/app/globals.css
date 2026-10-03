@@ -863,7 +863,9 @@ body:has(.admin-surface) {
 }
 
 .stat-cta-live {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   overflow: hidden;
   animation: stat-cta-halo 2.9s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
 }

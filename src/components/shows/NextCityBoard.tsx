@@ -31,15 +31,6 @@ import { cn } from "@/lib/utils";
  * a real `<button disabled>` rather than a styled link.
  */
 
-function formatDate(date: string | null, fallback: string) {
-  if (!date) return fallback;
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return date;
-  return d
-    .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-    .toUpperCase();
-}
-
 export function NextCityBoard() {
   const { persona, locale } = usePersona();
   const t = useTranslations("shows");
@@ -83,12 +74,9 @@ export function NextCityBoard() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
 
-                <div className="relative flex items-baseline justify-between gap-2">
+                <div className="relative flex items-baseline gap-2">
                   <span className="min-w-0 truncate font-chrome text-base tracking-wide">
                     {show.city[locale]}
-                  </span>
-                  <span className="shrink-0 font-chrome text-[11px] tabular-nums text-fg-muted">
-                    {formatDate(show.date, t("dateTbd"))}
                   </span>
                 </div>
 

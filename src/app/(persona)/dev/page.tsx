@@ -2,7 +2,6 @@
 
 import { startTransition, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { useWindowManager } from "@/components/window-manager/window-manager-context";
 import { usePersona } from "@/components/providers/PersonaProvider";
 import { useAuthScope } from "@/components/providers/AuthProvider";
@@ -18,7 +17,6 @@ import { BookDotm } from "@/components/shared/BookDotm";
 import { DesktopMetrics } from "@/components/shared/DesktopMetrics";
 import { DevDesktopWallpaper } from "@/components/dev/DevDesktopWallpaper";
 import { WindowLoading } from "@/components/window-manager/WindowLoading";
-import { DotmWindowLoader } from "@/components/shared/DotmLoader";
 import { withWindowLoader } from "@/lib/window-loader";
 
 /**
@@ -40,20 +38,20 @@ import { withWindowLoader } from "@/lib/window-loader";
  * the entry point to the player.
  */
 const PortfolioWindow = dynamic(
-  () => withWindowLoader("dev-portfolio", () => import("@/components/dev/window-content/PortfolioWindow")).then((m) => m.PortfolioWindow),
-  { ssr: false, loading: () => <WindowLoading label="Portfolio" gateKey="dev-portfolio" /> },
+  () => withWindowLoader(() => import("@/components/dev/window-content/PortfolioWindow")).then((m) => m.PortfolioWindow),
+  { ssr: false, loading: () => <WindowLoading label="Portfolio" /> },
 );
 const VaultWindow = dynamic(
-  () => withWindowLoader("dev-vault", () => import("@/components/dev/window-content/VaultWindow")).then((m) => m.VaultWindow),
-  { ssr: false, loading: () => <WindowLoading label="The Vault" gateKey="dev-vault" /> },
+  () => withWindowLoader(() => import("@/components/dev/window-content/VaultWindow")).then((m) => m.VaultWindow),
+  { ssr: false, loading: () => <WindowLoading label="The Vault" /> },
 );
 const MusicPlayerWindow = dynamic(
   () =>
-    import("@/components/dev/window-content/MusicPlayerWindow").then((m) => m.MusicPlayerWindow),
+    withWindowLoader(() => import("@/components/dev/window-content/MusicPlayerWindow")).then((m) => m.MusicPlayerWindow),
   { ssr: false, loading: () => <WindowLoading label="Player" /> },
 );
 const StoryWindow = dynamic(
-  () => import("@/components/shared/StoryWindow").then((m) => m.StoryWindow),
+  () => withWindowLoader(() => import("@/components/shared/StoryWindow")).then((m) => m.StoryWindow),
   { ssr: false, loading: () => <WindowLoading label="The Story" /> },
 );
 /**
@@ -62,28 +60,33 @@ const StoryWindow = dynamic(
  * putting it live. See the matching note on the DOTM desktop.
  */
 const ComingSoonDrop = dynamic(
-  () => withWindowLoader("dev-drops", () => import("@/components/shared/ComingSoonDrop")).then((m) => m.ComingSoonDrop),
-  { ssr: false, loading: () => <WindowLoading label="Drops" gateKey="dev-drops" /> },
+  () => withWindowLoader(() => import("@/components/shared/ComingSoonDrop")).then((m) => m.ComingSoonDrop),
+  { ssr: false, loading: () => <WindowLoading label="Drops" /> },
 );
 const LiveStats = dynamic(
-  () => import("@/components/shared/LiveStats").then((m) => m.LiveStats),
+  () => withWindowLoader(() => import("@/components/shared/LiveStats")).then((m) => m.LiveStats),
   { ssr: false, loading: () => <WindowLoading label="Live Stats" /> },
 );
 const ShootOnSightWindow = dynamic(
-  () => import("@/components/shared/ShootOnSightWindow").then((m) => m.ShootOnSightWindow),
-  { ssr: false, loading: () => <DotmWindowLoader label="Shoot at Site" /> },
+  () => withWindowLoader(() => import("@/components/shared/ShootOnSightWindow")).then((m) => m.ShootOnSightWindow),
+  { ssr: false, loading: () => <WindowLoading label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
-  () => withWindowLoader("dev-cluster-wall", () => import("@/components/shared/ClusterWallWindow")).then((m) => m.ClusterWallWindow),
-  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" gateKey="dev-cluster-wall" /> },
+  () => withWindowLoader(() => import("@/components/shared/ClusterWallWindow")).then((m) => m.ClusterWallWindow),
+  { ssr: false, loading: () => <WindowLoading label="Cluster Wall" /> },
 );
 const ShowsExperience = dynamic(
-  () => withWindowLoader("dev-shows", () => import("@/components/dotm/window-content/ShowsExperience")).then((m) => m.ShowsExperience),
-  { ssr: false, loading: () => <WindowLoading label="Shows" gateKey="dev-shows" /> },
+  () => withWindowLoader(() => import("@/components/dotm/window-content/ShowsExperience")).then((m) => m.ShowsExperience),
+  { ssr: false, loading: () => <WindowLoading label="Shows" /> },
+);
+const ServicesWindow = dynamic(
+  () => withWindowLoader(() => import("@/components/shared/ServicesWindow")).then((m) => m.ServicesWindow),
+  { ssr: false, loading: () => <WindowLoading label="Services" /> },
 );
 import {
   MyMusicImageIcon,
   PortfolioImageIcon,
+  ServicesIcon,
   VaultIcon,
   ClusterWallIcon,
   ShootOnSightIcon,
@@ -121,14 +124,15 @@ const ICON_STACK_GAP = 101;
  * the wallpaper, so icons and metrics never overlap.
  */
 const ICON_STACK_TOP = 104;
-// +1 Shows (middle right), +1 Shoot at Site (bottom centre), +1 Recycle Bin
+// +1 Services (second column), +1 Shows (middle right), +1 Shoot at Site
+// (bottom centre), +1 Recycle Bin
 // (bottom right). Press Kit used to sit at the bottom of the left column; it
 // is a download inside Portfolio now.
 //
 // THIS COUNT DRIVES THE REVEAL, so it has to stay in step with what is
 // actually drawn: the boot staggers icons in one at a time up to this number,
 // and an icon past the end of the count is one that never fades in.
-const TOTAL_ICONS = STACK_ICONS.length + 3;
+const TOTAL_ICONS = STACK_ICONS.length + 4;
 
 /**
  * The bottom row's baseline, shared by Shoot at Site and the Recycle Bin.
@@ -157,7 +161,6 @@ const RIGHT_COLUMN_INSET = 24;
 
 export default function DevDesktopPage() {
   const wm = useWindowManager();
-  const router = useRouter();
   const { syncPersona } = usePersona();
   // This screen is the DEV door. Tell the auth provider so, or it has
   // no way of knowing which of the two sessions to read.
@@ -243,6 +246,19 @@ export default function DevDesktopPage() {
         </div>
       ))}
 
+      {/* Services owns the first slot in a second desktop column. Keeping it
+          out of STACK_ICONS preserves the original 101px vertical rhythm: a
+          fifth item in that stack could run into the taskbar on short desktop
+          viewports, while this adjacent slot has a deliberate 10px gutter. */}
+      <DesktopIcon
+        label="Services"
+        icon={<ServicesIcon />}
+        iconBoxVariant="none"
+        initial={{ x: 126, y: ICON_STACK_TOP }}
+        className={revealed(STACK_ICONS.length)}
+        onOpen={() => wm.openWindow("services")}
+      />
+
       {/* THE RIGHT COLUMN: Shows at the top, Shoot at Site in the middle,
           Recycle Bin at the foot — all three on `RIGHT_COLUMN_INSET`, so they
           share one vertical line the way the left column's four do.
@@ -260,7 +276,7 @@ export default function DevDesktopPage() {
         iconBoxVariant="none"
         initial={{ x: 0, y: 0 }}
         style={{ right: RIGHT_COLUMN_INSET, top: ICON_STACK_TOP }}
-        className={revealed(STACK_ICONS.length)}
+        className={revealed(STACK_ICONS.length + 1)}
         onOpen={() => wm.openWindow("shows")}
       />
 
@@ -274,7 +290,7 @@ export default function DevDesktopPage() {
         iconBoxVariant="none"
         initial={{ x: 0, y: 0 }}
         style={{ right: RIGHT_COLUMN_INSET, top: "calc(50% - 55px)" }}
-        className={revealed(STACK_ICONS.length + 1)}
+        className={revealed(STACK_ICONS.length + 2)}
         onOpen={() => wm.openWindow("shoot-on-sight")}
       />
 
@@ -284,7 +300,7 @@ export default function DevDesktopPage() {
         iconBoxVariant="none"
         initial={{ x: 0, y: 0 }}
         style={{ right: RIGHT_COLUMN_INSET, top: BOTTOM_ROW_TOP }}
-        className={revealed(STACK_ICONS.length + 2)}
+        className={revealed(STACK_ICONS.length + 3)}
         onOpen={() => wm.openWindow("recycle-bin")}
       />
 
@@ -331,57 +347,17 @@ export default function DevDesktopPage() {
       <DevWindow id="folder-finding-peace" title="Finding peace">
         <FolderWindow folderId="folder-finding-peace" onSelectTrack={playTrack} />
       </DevWindow>
-      {/*
-        SIZED TO THE PICTURE, not to the screen.
-
-        `portfolio-backdrop-2.jpg` is 5740x3027 - aspect 1.896 - and a window
-        that does not share that ratio is a window that crops it. The previous
-        98vw x 98vh came out at 2.41 on a 1858x859 viewport, which is where the
-        zoom-out-plus-blurred-surround in `BrandUniverse` came from: machinery
-        built to hide a crop. Matching the ratio removes the crop instead, and
-        that machinery went with it.
-
-        HEIGHT LEADS AND WIDTH FOLLOWS, because height is the constrained axis:
-        `DevWindow` clamps at `max-height: calc(100vh - 104px)` to keep the
-        taskbar reachable, and there is no matching pressure on width. So 82vh
-        is chosen first - comfortably inside that clamp at every viewport
-        height - and the width is derived from it.
-
-        BOTH FIGURES ARE IN `vh`, THE WIDTH INCLUDED. That is not a typo: `vh`
-        is a valid unit for `width`, and using it is what pins the ratio. A
-        width in `vw` tracks the viewport's width while the height tracks its
-        height, so 1.896 would hold at exactly one window size and drift at
-        every other. 163 / 86 = 1.895, and it stays 1.895 through any resize.
-
-        IT WAS WRITTEN `calc(82vh * 1.896)` FIRST, AND THAT WAS WRONG. The calc
-        is valid CSS and the window did size correctly — but `negativeHalf` in
-        `window-geometry.ts` matches a bare number-and-unit and returns null for
-        anything else, which drops `useCenterOffsets` into measuring the element
-        instead. That measurement came back 0, so `marginLeft` stayed 0 against
-        `left: 50%` and the window hung off the right half of the screen with
-        its left edge sitting on the midline. A plain `vh` figure parses, so the
-        centring is arithmetic again and nothing is measured at runtime.
-
-        86vh, not 82, because of the second half of the ask. The window centres
-        on the viewport, so its top edge lands at `50vh - height/2`: at 82vh
-        that is 65px on a 720px-tall window, which is the top bar's own bottom
-        edge — touching it rather than covering it. 86vh lifts the top edge to
-        about 52px and puts the whole titlebar across the bar. `DevWindow`
-        clamps the height at `100vh - 104px` to keep the taskbar reachable, and
-        the centring still reads the declared 86vh, so on a viewport short
-        enough for that clamp to bite the window sits ~1.5px high. Not worth a
-        measurement pass to correct.
-
-        `overTopBar` is the other half of the titlebar fix, and it is not a
-        z-index one. See the `position` note in `DevWindow` for what was
-        actually clipping it.
-      */}
+      {/* Keep the source photograph's 1.896 aspect ratio, but leave enough
+          desktop around the shell for dragging to be meaningful. Both `min()`
+          expressions switch at the same viewport shape, so the window keeps
+          its ratio whether height or width is the limiting axis. Complex CSS
+          lengths deliberately make `useCenterOffsets` measure the rendered
+          box, avoiding stale arithmetic when a responsive limit takes over. */}
       <DevWindow
         id="portfolio"
         title="Portfolio"
-        width="163vh"
-        height="86vh"
-        overTopBar
+        width="min(129vh, 88vw)"
+        height="min(68vh, 46.4vw)"
         titleClassName="text-lg sm:text-xl"
       >
         <PortfolioWindow />
@@ -429,6 +405,9 @@ export default function DevDesktopPage() {
       </DevWindow>
       <DevWindow id="shows" title="Shows" placement="fullscreen" fullSurface>
         <ShowsExperience />
+      </DevWindow>
+      <DevWindow id="services" title="Services" placement="fullscreen" fullSurface>
+        <ServicesWindow />
       </DevWindow>
       <DevWindow id="merch" title="Drops" placement="fullscreen" fullSurface>
         <ComingSoonDrop />

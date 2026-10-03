@@ -132,11 +132,42 @@ function layoutBox(el: HTMLElement) {
 export function desktopDragBounds(el: HTMLElement | null) {
   if (!el || typeof window === "undefined") return undefined;
   const box = layoutBox(el);
+  const field = desktopWindowField();
+  let left = field.left - box.left;
+  let top = field.top - box.top;
+  let right = field.right - box.right;
+  let bottom = field.bottom - box.bottom;
+
+  // A responsive clamp can briefly leave a shell a fraction wider or taller
+  // than its field while the browser and ResizeObserver settle. In that state
+  // the raw limits are inverted (left > right or top > bottom), which makes
+  // drag libraries snap between two impossible edges. Pin that axis to its
+  // centred correction instead; the next measurement restores normal travel.
+  if (left > right) left = right = (left + right) / 2;
+  if (top > bottom) top = bottom = (top + bottom) / 2;
+
   return {
-    left: -box.left,
-    top: TOP_BAR_SAFE_AREA - box.top,
-    right: window.innerWidth - box.right,
-    bottom: window.innerHeight - BOTTOM_BAR_SAFE_AREA - box.bottom,
+    left,
+    top,
+    right,
+    bottom,
+  };
+}
+
+/**
+ * The exact rectangle a draggable window may occupy.
+ *
+ * DEV has a full-width taskbar, so its live top edge is the correct floor for
+ * a window. DOTM hides its floating dock whenever a window is on screen, so
+ * its floor is the webpage's actual bottom edge. Reserving 104px there made
+ * small-browser windows hit an invisible wall well above the page border.
+ */
+function desktopWindowField() {
+  const field = desktopField();
+  const taskbar = document.querySelector<HTMLElement>("[data-dev-taskbar]");
+  return {
+    ...field,
+    bottom: taskbar ? taskbar.getBoundingClientRect().top : field.bottom,
   };
 }
 
@@ -196,11 +227,13 @@ function desktopField() {
  * gained an item. Read fresh on each drag frame, so a dock magnifying under
  * the pointer is honoured at the size it currently is.
  */
-export function desktopObstacleRects(): DOMRect[] {
+export function desktopObstacleRects(exclude?: HTMLElement | null): DOMRect[] {
   if (typeof document === "undefined") return [];
   return Array.from(
     document.querySelectorAll<HTMLElement>("[data-desktop-obstacle]"),
-  ).map((el) => el.getBoundingClientRect());
+  )
+    .filter((el) => el !== exclude && !exclude?.contains(el))
+    .map((el) => el.getBoundingClientRect());
 }
 
 /** Breathing room between a dragged item and an obstacle it is pushed off. */
@@ -234,7 +267,11 @@ export function pushOutOfObstacles(
   const rect = el.getBoundingClientRect();
   const field = desktopField();
 
-  for (const ob of desktopObstacleRects()) {
+  // A draggable desktop icon can itself be an obstacle for its neighbours.
+  // Excluding the active element prevents it from trying to escape its own
+  // rectangle while still keeping every other icon, the dock and the tray
+  // out of bounds.
+  for (const ob of desktopObstacleRects(el)) {
     const left = ob.left - OBSTACLE_MARGIN;
     const right = ob.right + OBSTACLE_MARGIN;
     const top = ob.top - OBSTACLE_MARGIN;

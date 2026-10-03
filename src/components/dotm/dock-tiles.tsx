@@ -172,26 +172,15 @@ function Gloss48() {
 
 export function ShowsTile() {
   return (
-    <svg viewBox="0 0 48 48" className={TILE} aria-hidden="true">
-      <defs>
-        <linearGradient id="sh-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#141416" />
-          <stop offset="1" stopColor="#070708" />
-        </linearGradient>
-      </defs>
-      <rect width="48" height="48" rx="12" fill="url(#sh-bg)" />
-      <g stroke="#ffffff" strokeOpacity="0.12" strokeWidth="1">
-        <path d="M0 16 H48 M0 30 H48 M16 0 V48 M32 0 V48" />
-      </g>
-      <path
-        d="M24 12c-4.4 0-8 3.4-8 7.7 0 5.4 8 14.3 8 14.3s8-8.9 8-14.3c0-4.3-3.6-7.7-8-7.7z"
-        fill="#e11d2a"
-        stroke="#fff"
-        strokeWidth="1.4"
-      />
-      <circle cx="24" cy="19.6" r="2.8" fill="#fff" />
-      <Gloss />
-    </svg>
+    // Keep this as a plain img: browsers animate the WebP, while Next/Image
+    // optimizes only its first frame and would freeze the singer in place.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/dotm/shows-icon.webp"
+      alt=""
+      aria-hidden="true"
+      className="h-full w-full object-contain"
+    />
   );
 }
 
@@ -335,6 +324,19 @@ export function DropsTile() {
       />
       <Gloss />
     </svg>
+  );
+}
+
+export function ServicesTile() {
+  return (
+    // Plain img is intentional: next/image flattens animated WebP to a still.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/dotm/services-icon.webp"
+      alt=""
+      aria-hidden="true"
+      className="h-full w-full object-contain"
+    />
   );
 }
 

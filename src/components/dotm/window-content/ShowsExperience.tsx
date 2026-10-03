@@ -375,12 +375,9 @@ function NextCityTiles() {
             {String(i + 1).padStart(2, "0")}
           </span>
 
-          <div className="relative flex items-center justify-between gap-2">
+          <div className="relative flex items-center gap-2">
             <span className="font-headline text-base tracking-wide">
               {show.city[locale]}
-            </span>
-            <span className="text-[10px] tabular-nums text-white/55">
-              {formatDate(show.date)}
             </span>
           </div>
           <p className="relative mt-0.5 truncate text-xs text-white/55">

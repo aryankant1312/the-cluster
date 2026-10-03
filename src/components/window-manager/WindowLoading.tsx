@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderVideo } from "@/components/shared/DotmLoader";
+import { useWindowLoadGate } from "./WindowLoadBoundary";
 
 /**
  * What a window shows while its code is on the way.
@@ -16,14 +16,16 @@ import { LoaderVideo } from "@/components/shared/DotmLoader";
  * is mounted inside rather than choosing its own, which is why the two
  * desktops get visibly different loaders out of one component.
  */
-export function WindowLoading({ label, gateKey }: { label?: string; gateKey?: string }) {
+export function WindowLoading({ label }: { label?: string }) {
+  useWindowLoadGate(true);
+
   return (
     <div
       role="status"
       aria-live="polite"
       className="h-full w-full overflow-hidden bg-black"
     >
-      <LoaderVideo label={label ? `Opening ${label}` : "Opening"} gateKey={gateKey} />
+      <span className="sr-only">{label ? `Opening ${label}` : "Opening"}</span>
     </div>
   );
 }

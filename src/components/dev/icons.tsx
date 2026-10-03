@@ -53,6 +53,20 @@ export function PortfolioImageIcon() {
   );
 }
 
+export function ServicesIcon() {
+  return (
+    // The animated WebP has a real alpha channel, so the desktop wallpaper
+    // shows around the artwork instead of through a baked white video card.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/dev/services-icon.webp"
+      alt=""
+      aria-hidden="true"
+      className="pointer-events-none h-full w-full object-contain drop-shadow-[0_3px_4px_rgba(0,0,0,0.55)]"
+    />
+  );
+}
+
 /**
  * The Vault, as the looping locker animation.
  *
@@ -295,6 +309,20 @@ export function DropsTrayIcon() {
         <path d="M9 8V6a3 3 0 0 1 6 0v2" />
       </g>
     </svg>
+  );
+}
+
+export function ServicesTrayIcon() {
+  return (
+    // Reuse the alpha-keyed desktop asset so the quick-launch mark has no
+    // baked white thumbnail card. A plain img preserves animated WebP frames.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/dev/services-icon.webp"
+      alt=""
+      aria-hidden="true"
+      className={QUICK_LAUNCH_ICON}
+    />
   );
 }
 

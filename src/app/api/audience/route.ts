@@ -65,7 +65,7 @@ async function resolveChanges(): Promise<Record<string, number | null>> {
 
 export async function GET() {
   try {
-    const [stats, changes] = await Promise.all([
+    const [resolved, changes] = await Promise.all([
       resolveAudienceStats(),
       // A missing or unreachable database means no changes, which renders as
       // no pills — the figures themselves are the point and they resolve on
@@ -74,13 +74,13 @@ export async function GET() {
     ]);
     return NextResponse.json({
       values: Object.fromEntries(
-        Object.entries(stats).map(([key, s]) => [key, s.value]),
+        Object.entries(resolved).map(([key, s]) => [key, s.value]),
       ),
       changes,
       // Which layer answered, per key. The client caches live and cached
       // figures locally and paints them instantly on the next visit.
       origins: Object.fromEntries(
-        Object.entries(stats).map(([key, s]) => [key, s.origin]),
+        Object.entries(resolved).map(([key, s]) => [key, s.origin]),
       ),
       fetchedAt: new Date().toISOString(),
     });

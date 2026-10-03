@@ -217,13 +217,19 @@ export function LiveStats() {
       {panel.action && (
         <div
           className={cn(
-            "flex shrink-0 flex-nowrap items-center justify-between gap-6 border-t px-6 py-4",
+            "relative z-20 flex shrink-0 flex-nowrap items-center gap-4 overflow-visible border-t px-6 py-4",
             isDotm ? "border-white/10" : "border-black/15",
           )}
         >
-          <GoalMetric key={panel.id} panel={panel} value={audience?.values[panel.metrics[0].key] ?? null} />
+          <MilestoneProgress
+            key={panel.id}
+            panel={panel}
+            value={audience?.values[panel.milestoneKey] ?? null}
+            isDotm={isDotm}
+          />
           <PanelActionButton
             label={panel.action.label}
+            hoverLabel={panel.action.hoverLabel}
             href={panel.action.href}
             platform={panel.id}
             accent={panel.accent}
@@ -300,6 +306,7 @@ function FilterButton({
  */
 function PanelActionButton({
   label,
+  hoverLabel,
   href,
   platform,
   accent,
@@ -307,6 +314,7 @@ function PanelActionButton({
   isDotm,
 }: {
   label: string;
+  hoverLabel: string;
   href: string;
   platform: StatPlatform;
   accent: string;
@@ -318,24 +326,56 @@ function PanelActionButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      // `--cta-accent` feeds the halo in `.stat-cta-live`, so the ring leaving
-      // the button is mixed from the same brand colour filling it.
-      style={
-        { backgroundColor: accent, color: onAccent, "--cta-accent": accent } as React.CSSProperties
-      }
+      style={{ backgroundColor: accent, color: onAccent }}
       className={cn(
         // 13px and a 20px mark, up from 11 and 15. At the old size this read
         // as a footnote under figures set at 4rem.
-        "inline-flex items-center gap-2.5 px-5 py-3 font-chrome text-[13px] uppercase tracking-[0.18em] transition-transform duration-150 sm:text-sm",
+        "group relative inline-flex shrink-0 items-center gap-2.5 px-5 py-3 font-chrome text-[13px] uppercase tracking-[0.18em] transition-transform duration-150 sm:text-sm",
         "hover:scale-[1.03] active:scale-[0.98]",
-        // The sweep and the halo. Both stop under `prefers-reduced-motion`.
-        "stat-cta-live",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         isDotm
           ? "rounded-full shadow-[0_10px_26px_-12px_rgba(0,0,0,0.9)] focus-visible:ring-white focus-visible:ring-offset-[#0b0b0c]"
           : "win98-border win98-press focus-visible:ring-[#0a2f5c] focus-visible:ring-offset-persona-window-bg",
       )}
     >
+      {/* The animated sheen needs clipping, but the tooltip must not be
+          clipped with it. Keeping the effect in its own inset layer gives
+          each one the correct overflow behaviour. */}
+      <span
+        aria-hidden="true"
+        className="stat-cta-live"
+        style={{ "--cta-accent": accent } as React.CSSProperties}
+      />
+      <span
+        role="tooltip"
+        className={cn(
+          "pointer-events-none invisible absolute bottom-[calc(100%+0.65rem)] right-0 z-20 whitespace-nowrap font-chrome text-[10px] uppercase opacity-0 transition-[opacity,transform] duration-150 group-hover:visible group-hover:-translate-y-0.5 group-hover:opacity-100 group-focus-visible:visible group-focus-visible:-translate-y-0.5 group-focus-visible:opacity-100",
+          isDotm
+            ? "rounded-full border border-white/20 bg-black/95 px-4 py-2 tracking-[0.18em] text-white shadow-[0_14px_35px_-12px_rgba(0,0,0,0.95)] backdrop-blur-md"
+            : "win98-border bg-[#c0c0c0] p-1 text-black shadow-[3px_3px_0_rgba(0,0,0,0.45)]",
+        )}
+      >
+        {isDotm ? (
+          <span className="flex items-center gap-2.5">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full shadow-[0_0_10px_currentColor]"
+              style={{ backgroundColor: accent, color: accent }}
+            />
+            <span className="text-white/55">DOTM //</span>
+            <span>{hoverLabel}</span>
+          </span>
+        ) : (
+          <span className="block min-w-52 text-left tracking-normal">
+            <span className="block bg-[#0a2f5c] px-2 py-1 text-[9px] tracking-[0.16em] text-white">
+              THE CLUSTER — ACTION
+            </span>
+            <span className="block px-2 py-1.5 font-mono text-[11px] normal-case">
+              C:\&gt; {hoverLabel}
+            </span>
+          </span>
+        )}
+      </span>
       {/* Wrapped and positioned so the sweep passes *under* the label. The
           sweep is an absolutely positioned pseudo-element, and a positioned box
           paints above its static siblings — without this the band would wash
@@ -639,16 +679,61 @@ function PlatformMark({
 
 export default LiveStats;
 
-function GoalMetric({ panel, value }: { panel: StatPanel; value: number | null }) {
-  const animated = useCountUp(value);
+function MilestoneProgress({
+  panel,
+  value,
+  isDotm,
+}: {
+  panel: StatPanel;
+  value: number | null;
+  isDotm: boolean;
+}) {
+  // The same 2.6 second elapsed-time animation as the headline count. Driving
+  // width from the animated number makes the fill and percentage land on the
+  // exact live value together instead of running two independent timers.
+  const animated = useCountUp(value, 2600);
+  const current = animated === null ? null : Math.max(0, animated);
+  const percent = current === null ? 0 : Math.min(100, (current / panel.milestone) * 100);
+
   return (
-    <p className="min-w-0 overflow-x-auto whitespace-nowrap font-body text-base sm:text-lg">
-      <span className="opacity-75">{panel.goal}</span>
-      <span className="mx-3 opacity-35">•</span>
-      <span className="font-chrome text-2xl tabular-nums sm:text-3xl" style={{ color: panel.accent }}>
-        {animated === null ? "—" : formatIndian(Math.round(animated))}
-      </span>{" "}
-      <span>{panel.metrics[0].label.toLowerCase()}</span>
-    </p>
+    <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-3 whitespace-nowrap">
+      <span className="font-chrome text-[10px] uppercase tracking-[0.16em] opacity-75 sm:text-xs">
+        Next Milestone
+      </span>
+      <span className="font-chrome text-sm tabular-nums sm:text-base">
+        {current === null ? "—" : formatIndian(Math.round(current))}
+        <span className="mx-1.5 opacity-45">/</span>
+        {formatIndian(panel.milestone)}
+      </span>
+      <div
+        role="progressbar"
+        aria-label={`${panel.label} next milestone`}
+        aria-valuemin={0}
+        aria-valuemax={panel.milestone}
+        aria-valuenow={current === null ? 0 : Math.round(current)}
+        className={cn(
+          "relative h-5 min-w-24 flex-1 overflow-hidden border",
+          isDotm ? "rounded-md border-white/20 bg-white/10" : "win98-border bg-white",
+        )}
+      >
+        <span
+          className="absolute inset-y-0 left-0"
+          style={{
+            width: `${percent}%`,
+            backgroundColor: panel.accent,
+            backgroundImage:
+              "repeating-linear-gradient(90deg, transparent 0, transparent 8px, rgba(255,255,255,0.28) 8px, rgba(255,255,255,0.28) 9px)",
+          }}
+        />
+      </div>
+      <span
+        className={cn(
+          "min-w-[4.25rem] px-2 py-1 text-center font-chrome text-[11px] tabular-nums sm:text-xs",
+          isDotm ? "rounded-md bg-white/10 text-white" : "win98-border bg-persona-surface text-black",
+        )}
+      >
+        {current === null ? "—" : `${percent.toFixed(1)}%`}
+      </span>
+    </div>
   );
 }

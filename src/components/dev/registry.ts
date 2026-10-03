@@ -13,6 +13,7 @@ export const DEV_WINDOWS: DevWindowMeta[] = [
   { id: "folder-its-ok", title: "It's OK", glyph: "▤", label: "It's OK" },
   { id: "folder-finding-peace", title: "Finding peace", glyph: "▤", label: "Finding peace" },
   { id: "portfolio", title: "Portfolio", glyph: "▦", label: "Portfolio" },
+  { id: "services", title: "Services", glyph: "✦", label: "Services" },
   { id: "vault", title: "The Vault", glyph: "▣", label: "The Vault" },
   { id: "cluster-wall", title: "Cluster Wall", glyph: "▤", label: "Cluster Wall" },
   { id: "shoot-on-sight", title: "Shoot at Site", glyph: "◎", label: "Shoot at Site" },

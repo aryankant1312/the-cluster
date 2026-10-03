@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { shootLocations } from "@/content/shoot-on-sight";
-import { DotmLoader } from "@/components/shared/DotmLoader";
+import { useWindowLoadGate } from "@/components/window-manager/WindowLoadBoundary";
 import { cn } from "@/lib/utils";
 
 /**
@@ -81,6 +81,7 @@ export function ShootOnSightWindow({ isDotm }: { isDotm: boolean }) {
    */
   const [ready, setReady] = useState(false);
   const [shownPersona, setShownPersona] = useState(isDotm);
+  useWindowLoadGate(!ready);
 
   if (shownPersona !== isDotm) {
     setShownPersona(isDotm);
@@ -93,10 +94,7 @@ export function ShootOnSightWindow({ isDotm }: { isDotm: boolean }) {
   }, [isDotm]);
 
   return (
-    // `relative`, so the loader below has something to be `inset-0` of.
     <div className={cn("relative flex h-full w-full flex-col lg:flex-row", ground)}>
-      {/* The same blurred-window loader used by the Cluster Wall. */}
-      <DotmLoader show={!ready} label="Loading Shoot at Site" />
       {/* ── The places ──────────────────────────────────────────────────
           `min-h-0` on a flex child that scrolls. Without it the child's
           min-content height wins over `overflow-y-auto` and the column grows

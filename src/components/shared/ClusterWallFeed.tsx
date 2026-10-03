@@ -228,7 +228,7 @@ export function ClusterWallFeed() {
               Nothing on the wall yet. Be the first.
             </p>
           ) : (
-            <ul className="columns-1 gap-4 sm:columns-2 lg:columns-3 [&>li]:mb-4 [&>li]:break-inside-avoid">
+            <ul className="flex flex-wrap items-start justify-center gap-4">
               {posts.map((post) => (
                 <Card
                   key={post.id}
@@ -258,22 +258,39 @@ function Card({
   onReport: () => void;
 }) {
   const embed = embedUrlFor(post.media_provider, post.media_embed_id);
+  const isInstagram = post.media_provider === "instagram";
+  const isYouTube = post.media_provider === "youtube";
+  const isInstagramReel = isInstagram && /\/reels?\//i.test(post.media_url);
 
   return (
     <li
       className={cn(
         "overflow-hidden",
+        isInstagram
+          ? "w-full max-w-[540px]"
+          : isYouTube
+            ? "w-full max-w-[560px]"
+            : "w-full max-w-sm",
         isDotm
           ? "rounded-[var(--radius-window)] bg-white/5 ring-1 ring-white/10"
           : "win98-border bg-persona-surface",
       )}
     >
       {embed && (
-        <div className="aspect-video w-full bg-black">
+        <div
+          className={cn(
+            "w-full bg-black",
+            isInstagram
+              ? isInstagramReel
+                ? "h-[760px]"
+                : "h-[660px]"
+              : "aspect-video",
+          )}
+        >
           <iframe
             src={embed}
             title={post.author ? `Shared by ${post.author}` : "Fan submission"}
-            className="h-full w-full"
+            className="block h-full w-full border-0"
             allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
             allowFullScreen
           />

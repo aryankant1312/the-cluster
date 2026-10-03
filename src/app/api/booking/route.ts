@@ -51,7 +51,7 @@ async function notify(summary: string, html: string, subject: string, replyTo: s
         // until one is set up this falls back to their sandbox sender.
         from: process.env.BOOKING_FROM ?? "THE CLUSTER <onboarding@resend.dev>",
         to: [to],
-        reply_to: replyTo,
+        ...(replyTo ? { reply_to: replyTo } : {}),
         subject,
         text: summary,
         html,
@@ -92,7 +92,9 @@ export async function POST(request: Request) {
   const errors: Record<string, string> = {};
   if (!ENQUIRY_TYPES.includes(enquiryType)) errors.enquiry_type = "Pick what you're after.";
   if (!looksLikeName(input.contact_name)) errors.contact_name = "Enter a name using letters.";
-  if (!looksLikeEmail(input.contact_email)) errors.contact_email = "Enter a valid email address.";
+  if (!looksLikeEmail(input.contact_email) && !/^\d{7,15}$/.test(input.contact_phone)) {
+    errors.contact_email = "Enter a valid email address or phone number.";
+  }
   if (input.contact_phone && !/^\d{7,15}$/.test(input.contact_phone)) {
     errors.contact_phone = "Use 7–15 digits only.";
   }
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
   const summary = [
     `New booking request — ${ENQUIRY_LABELS[enquiryType]}`,
     "",
-    `From:      ${input.contact_name} <${input.contact_email}>`,
+    `From:      ${input.contact_name}${input.contact_email ? ` <${input.contact_email}>` : ""}`,
     input.contact_phone ? `Phone:     ${input.contact_phone}` : null,
     `City:      ${input.city || "—"}`,
     `Date:      ${input.event_date || "—"}`,

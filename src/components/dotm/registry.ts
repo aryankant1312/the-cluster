@@ -14,6 +14,7 @@ export const DOTM_WINDOWS: DotmWindowMeta[] = [
   { id: "spotify", title: "Spotify" },
   { id: "track", title: "Player" },
   { id: "portfolio", title: "Portfolio" },
+  { id: "services", title: "Services" },
   { id: "cluster-wall", title: "Cluster Wall" },
   { id: "shoot-on-sight", title: "Shoot at Site" },
   { id: "vault", title: "The Vault" },

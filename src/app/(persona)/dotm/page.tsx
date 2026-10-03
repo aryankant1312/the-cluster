@@ -12,10 +12,10 @@ import { ContactCard } from "@/components/dotm/window-content/ContactCard";
 import { NotesApp, type StickyNote } from "@/components/dotm/window-content/NotesApp";
 import { MiniPlayer } from "@/components/dotm/window-content/MiniPlayer";
 import { DotmVaultIcon } from "@/components/dotm/DotmVaultIcon";
+import { DotmDesktopShortcuts } from "@/components/dotm/DotmDesktopShortcuts";
 import { BookDotm } from "@/components/shared/BookDotm";
 import { DesktopMetrics } from "@/components/shared/DesktopMetrics";
 import { WindowLoading } from "@/components/window-manager/WindowLoading";
-import { DotmWindowLoader } from "@/components/shared/DotmLoader";
 import { Blink, DOTM_OPEN_MS } from "@/components/shared/Blink";
 import { disarmBlink, isBlinkArmed } from "@/lib/blink-gate";
 import { withWindowLoader } from "@/lib/window-loader";
@@ -44,24 +44,24 @@ import { withWindowLoader } from "@/lib/window-loader";
  * three are what a visitor opens first.
  */
 const StoryWindow = dynamic(
-  () => import("@/components/shared/StoryWindow").then((m) => m.StoryWindow),
+  () => withWindowLoader(() => import("@/components/shared/StoryWindow")).then((m) => m.StoryWindow),
   { ssr: false, loading: () => <WindowLoading label="The Story" /> },
 );
 const DotmMusicWheel = dynamic(
-  () => import("@/components/dotm/window-content/DotmMusicWheel").then((m) => m.DotmMusicWheel),
+  () => withWindowLoader(() => import("@/components/dotm/window-content/DotmMusicWheel")).then((m) => m.DotmMusicWheel),
   { ssr: false, loading: () => <WindowLoading label="Music" /> },
 );
 const ShowsExperience = dynamic(
-  () => withWindowLoader("dotm-shows", () => import("@/components/dotm/window-content/ShowsExperience")).then((m) => m.ShowsExperience),
-  { ssr: false, loading: () => <WindowLoading label="Shows" gateKey="dotm-shows" /> },
+  () => withWindowLoader(() => import("@/components/dotm/window-content/ShowsExperience")).then((m) => m.ShowsExperience),
+  { ssr: false, loading: () => <WindowLoading label="Shows" /> },
 );
 const ShootOnSightWindow = dynamic(
-  () => import("@/components/shared/ShootOnSightWindow").then((m) => m.ShootOnSightWindow),
-  { ssr: false, loading: () => <DotmWindowLoader label="Shoot at Site" /> },
+  () => withWindowLoader(() => import("@/components/shared/ShootOnSightWindow")).then((m) => m.ShootOnSightWindow),
+  { ssr: false, loading: () => <WindowLoading label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
-  () => withWindowLoader("dotm-cluster-wall", () => import("@/components/shared/ClusterWallWindow")).then((m) => m.ClusterWallWindow),
-  { ssr: false, loading: () => <DotmWindowLoader label="Cluster Wall" gateKey="dotm-cluster-wall" /> },
+  () => withWindowLoader(() => import("@/components/shared/ClusterWallWindow")).then((m) => m.ClusterWallWindow),
+  { ssr: false, loading: () => <WindowLoading label="Cluster Wall" /> },
 );
 /**
  * Drops shows the teaser, not the shop.
@@ -72,23 +72,27 @@ const ClusterWallWindow = dynamic(
  * worse answer than an honest empty room.
  */
 const ComingSoonDrop = dynamic(
-  () => withWindowLoader("dotm-drops", () => import("@/components/shared/ComingSoonDrop")).then((m) => m.ComingSoonDrop),
-  { ssr: false, loading: () => <WindowLoading label="Drops" gateKey="dotm-drops" /> },
+  () => withWindowLoader(() => import("@/components/shared/ComingSoonDrop")).then((m) => m.ComingSoonDrop),
+  { ssr: false, loading: () => <WindowLoading label="Drops" /> },
 );
 const LiveStats = dynamic(
-  () => import("@/components/shared/LiveStats").then((m) => m.LiveStats),
+  () => withWindowLoader(() => import("@/components/shared/LiveStats")).then((m) => m.LiveStats),
   { ssr: false, loading: () => <WindowLoading label="Live Stats" /> },
 );
 const DotmPortfolioWindow = dynamic(
   () =>
-    withWindowLoader("dotm-portfolio", () => import("@/components/dotm/window-content/DotmPortfolioWindow")).then(
+    withWindowLoader(() => import("@/components/dotm/window-content/DotmPortfolioWindow")).then(
       (m) => m.DotmPortfolioWindow,
     ),
-  { ssr: false, loading: () => <WindowLoading label="Portfolio" gateKey="dotm-portfolio" /> },
+  { ssr: false, loading: () => <WindowLoading label="Portfolio" /> },
 );
 const DotmVaultWindow = dynamic(
-  () => withWindowLoader("dotm-vault", () => import("@/components/dotm/window-content/DotmVaultWindow")).then((m) => m.DotmVaultWindow),
-  { ssr: false, loading: () => <WindowLoading label="The Vault" gateKey="dotm-vault" /> },
+  () => withWindowLoader(() => import("@/components/dotm/window-content/DotmVaultWindow")).then((m) => m.DotmVaultWindow),
+  { ssr: false, loading: () => <WindowLoading label="The Vault" /> },
+);
+const ServicesWindow = dynamic(
+  () => withWindowLoader(() => import("@/components/shared/ServicesWindow")).then((m) => m.ServicesWindow),
+  { ssr: false, loading: () => <WindowLoading label="Services" /> },
 );
 
 export default function DotmDesktopPage() {
@@ -156,6 +160,7 @@ export default function DotmDesktopPage() {
       <DesktopWallpaper src="/images/dotm/wallpaper-0001.jpg" alt="" />
 
       <DesktopMetrics />
+      <DotmDesktopShortcuts />
 
       {/* Every window centres itself and opens windowed. Nothing opens
           maximized: a full-viewport window cropped its own content against
@@ -248,6 +253,9 @@ export default function DotmDesktopPage() {
         fullSurface
       >
         <DotmPortfolioWindow />
+      </DotmWindow>
+      <DotmWindow id="services" title="Services" placement="fullscreen" fullSurface>
+        <ServicesWindow />
       </DotmWindow>
       {/* The Vault opens filled, like the music player. Behind the code lock
           is a sky you turn your head inside of, and a windowed sky is a

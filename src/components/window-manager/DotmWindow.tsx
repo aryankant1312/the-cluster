@@ -4,14 +4,19 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { useWindowManager } from "./window-manager-context";
 import {
-  BOTTOM_BAR_SAFE_AREA,
   desktopDragBounds,
   useCenterOffsets,
   useTopBarInset,
 } from "./window-geometry";
+import { WindowLoadBoundary } from "./WindowLoadBoundary";
 
 /** Side inset for a filled window, so it still reads as a window. */
 const FILL_INSET = 10;
+/** Air between a normal window and the webpage's left/right/bottom edges. */
+const WINDOW_EDGE_INSET = 8;
+/** Responsive size used when a fullscreen app is restored to a window. */
+const RESTORED_WIDTH = "min(88vw, 1120px)";
+const RESTORED_HEIGHT = "min(76vh, 760px)";
 
 /**
  * DOTM's window shell: frosted macOS chrome with traffic lights.
@@ -76,7 +81,18 @@ export function DotmWindow({
   const dragControls = useDragControls();
   const [closing, setClosing] = useState(false);
   const [bounds, setBounds] = useState<ReturnType<typeof desktopDragBounds>>(undefined);
-  const offsets = useCenterOffsets(shellRef, width, height);
+  const refreshBounds = useCallback(() => {
+    const next = desktopDragBounds(shellRef.current);
+    setBounds((current) => {
+      if (!next || !current) return next;
+      return current.left === next.left &&
+        current.top === next.top &&
+        current.right === next.right &&
+        current.bottom === next.bottom
+        ? current
+        : next;
+    });
+  }, []);
   // Measured, not assumed: a filled window has to start below the real top
   // bar, and the bar's height depends on the persona's typeface.
   const topInset = useTopBarInset();
@@ -96,16 +112,31 @@ export function DotmWindow({
    */
   const [expanded, setExpanded] = useState(true);
   const canFullscreen = placement === "fullscreen";
-  const effective = canFullscreen && !expanded ? "fill" : placement;
+  const restoredFromFullscreen = canFullscreen && !expanded;
+  // Restore means a real, draggable window—not the old non-draggable `fill`
+  // rectangle that looked smaller but still occupied the whole desktop.
+  const effective = restoredFromFullscreen ? "center" : placement;
+  const shellWidth = restoredFromFullscreen ? RESTORED_WIDTH : width;
+  const shellHeight = restoredFromFullscreen ? RESTORED_HEIGHT : height;
+  // Always measure the rendered shell. On a small browser CSS may clamp a
+  // 520px declaration to the available width; arithmetic based on 520 would
+  // centre and constrain a box that no longer exists.
+  const offsets = useCenterOffsets(shellRef, undefined, undefined);
   const movable = effective !== "fill" && effective !== "fullscreen";
 
   useEffect(() => {
     if (!isOpen || !movable) return;
-    const measure = () => setBounds(desktopDragBounds(shellRef.current));
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [isOpen, movable]);
+    refreshBounds();
+    const observer = new ResizeObserver(refreshBounds);
+    if (shellRef.current) observer.observe(shellRef.current);
+    const topBar = document.querySelector<HTMLElement>(".persona-topbar");
+    if (topBar) observer.observe(topBar);
+    window.addEventListener("resize", refreshBounds);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", refreshBounds);
+    };
+  }, [isOpen, movable, refreshBounds]);
 
   const close = useCallback(() => {
     setClosing(true);
@@ -151,9 +182,8 @@ export function DotmWindow({
    * Covering it was never an option: the dock is fixed at `z-[200]`, above every
    * window shell, so a "fullscreen" window still had it floating across the
    * bottom. It is asked to stand down instead. Tied to the effective placement
-   * rather than to `canFullscreen`, so the maximize light dropping the window to
-   * `fill` brings the dock straight back — that placement stops short of it on
-   * purpose and expects it to be there.
+   * rather than to `canFullscreen`, so restoring to the responsive draggable
+   * window brings the desktop chrome straight back.
    */
   const { setChromeHidden } = wm;
   useEffect(() => {
@@ -171,9 +201,8 @@ export function DotmWindow({
           drag={movable}
           dragListener={false}
           dragControls={dragControls}
-          dragMomentum
-          dragElastic={0.1}
-          dragTransition={{ power: 0.12, timeConstant: 90, bounceStiffness: 520, bounceDamping: 38 }}
+          dragMomentum={false}
+          dragElastic={0}
           dragConstraints={bounds}
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: closing ? 0 : 1, scale: closing ? 0.94 : 1 }}
@@ -188,20 +217,13 @@ export function DotmWindow({
               ? { visibility: "hidden" as const, pointerEvents: "none" as const }
               : null),
             zIndex: wm.zIndexOf(id),
-            width,
-            height,
-            // The width cap is for windows measured in pixels: a 520px player
-            // on a 400px phone has to be reined in. A window that asked for its
-            // width in `vw` is already viewport-relative and cannot overflow,
-            // so a flat 96vw only overrode what the caller asked for — the
-            // contact card asking for 98vw silently got 96. Those keep their
-            // own figure now; a pixel width still gets the cap.
-            maxWidth:
-              typeof width === "string" && width.endsWith("vw") ? width : "96vw",
-            // The height cap does a different job and stays unconditional: it
-            // holds the bottom edge clear of the dock. A window taller than
-            // this slides underneath and loses its own close button with it.
-            maxHeight: `calc(100vh - ${BOTTOM_BAR_SAFE_AREA}px)`,
+            width: shellWidth,
+            height: shellHeight,
+            // Fit every ordinary/restored window inside the actual webpage.
+            // The rendered dimensions—not the requested ones—feed centring and
+            // drag bounds, so narrowing the browser cannot create a jump.
+            maxWidth: `calc(100vw - ${WINDOW_EDGE_INSET * 2}px)`,
+            maxHeight: `calc(100vh - ${topInset + WINDOW_EDGE_INSET}px)`,
             // Vertically centred always; horizontally centred unless the
             // window asked for the right edge. `useCenterOffsets` measures
             // the element when its height is not declared, which is what
@@ -219,7 +241,7 @@ export function DotmWindow({
                   left: FILL_INSET,
                   right: FILL_INSET,
                   width: "auto",
-                  height: `calc(100vh - ${topInset + BOTTOM_BAR_SAFE_AREA}px)`,
+                  height: `calc(100vh - ${topInset + FILL_INSET}px)`,
                   maxWidth: "none",
                   maxHeight: "none",
                   marginTop: 0,
@@ -255,7 +277,7 @@ export function DotmWindow({
             className="group/lights relative flex shrink-0 cursor-grab active:cursor-grabbing touch-none select-none items-center justify-center border-b border-white/10 px-3 py-3"
             onPointerDown={(event) => {
               if (!movable) return;
-              setBounds(desktopDragBounds(shellRef.current));
+              refreshBounds();
               dragControls.start(event);
             }}
           >
@@ -286,11 +308,13 @@ export function DotmWindow({
           <div
             className={
               fullSurface
-                ? "min-h-0 flex-1 overflow-hidden font-body text-sm text-persona-fg"
-                : "min-h-0 flex-1 overflow-auto p-4 font-body text-sm text-persona-fg"
+                ? "relative min-h-0 flex-1 overflow-hidden font-body text-sm text-persona-fg"
+                : "relative min-h-0 flex-1 overflow-auto p-4 font-body text-sm text-persona-fg"
             }
           >
-            {children}
+            <WindowLoadBoundary label={`Opening ${title}`}>
+              {children}
+            </WindowLoadBoundary>
           </div>
         </motion.div>
       )}

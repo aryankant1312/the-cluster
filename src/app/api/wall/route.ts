@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const parsed = parseMediaUrl(rawMedia);
     if (!parsed) {
       return NextResponse.json(
-        { ok: false, error: "That link didn't look like a valid web address." },
+        { ok: false, error: "Only Instagram and YouTube post links can be added." },
         { status: 422 },
       );
     }

@@ -2,9 +2,8 @@ import type { MediaProvider } from "@/lib/db/types";
 
 /**
  * Fan submissions are links, not uploads. This turns a pasted URL into a
- * provider plus the id needed to embed it, and rejects anything that isn't a
- * recognised http(s) link — which also keeps `javascript:` and `data:` URLs
- * off the wall.
+ * provider plus the id needed to embed it. Only Instagram and YouTube are
+ * accepted: every saved link must have a predictable, safe widget size.
  */
 
 export interface ParsedMedia {
@@ -42,7 +41,7 @@ export function parseMediaUrl(raw: string): ParsedMedia | null {
     return id ? { provider: "instagram", embedId: id, url: u.toString() } : null;
   }
 
-  return { provider: "other", embedId: "", url: u.toString() };
+  return null;
 }
 
 /** Player URL for an embeddable provider, or null when only a link is possible. */
