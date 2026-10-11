@@ -1,5 +1,7 @@
 "use client";
 
+import { SiteVideo } from "@/components/shared/SiteVideo";
+
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -606,7 +608,7 @@ export default function DotmEntryPage() {
                 those black pixels transparent, so the crowd photograph is
                 the first loaded layer and the film plays cleanly over it.
                 The existing blink starts after one complete pass. */}
-            <video
+            <SiteVideo
               autoPlay
               muted
               playsInline
@@ -618,7 +620,7 @@ export default function DotmEntryPage() {
             >
               <source src="/videos/dotm-open.mp4" type="video/mp4" />
               We made Cluster bigger than the music.
-            </video>
+            </SiteVideo>
 
             {/* The bloom the intro rings used to supply. A single soft red
                 ellipse behind the type, so the words sit in the persona's

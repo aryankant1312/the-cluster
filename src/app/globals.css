@@ -9,6 +9,15 @@
   font-family: 'Tanker', 'Inter Tight', sans-serif;
 }
 
+/* All local videos use the site's playback controls, including on hover. */
+video[data-site-video]::-webkit-media-controls,
+video[data-site-video]::-webkit-media-controls-enclosure,
+video[data-site-video]::-webkit-media-controls-panel,
+video[data-site-video]::-webkit-media-controls-overlay-play-button,
+video[data-site-video]::-webkit-media-controls-start-playback-button {
+  display: none !important;
+}
+
 :root {
   --_bg: #0a2f2f;
   --_surface: #d8cdb8;
@@ -299,6 +308,103 @@ body {
     inset -1px -1px 0 #fff,
     inset 2px 2px 0 #808080,
     inset -2px -2px 0 #dfdfdf;
+}
+
+/* Scope the retro scroll chrome to DEV app windows, including nested panes
+   and textareas. Do not force overflow or reveal intentionally hidden bars.
+   Standard scrollbar colours override WebKit parts in Chromium, so keep the
+   simple colour fallback separate from the detailed raised Windows chrome.
+   High-contrast mode keeps the browser's accessible system scrollbars. */
+@media (forced-colors: none) {
+  @supports not selector(::-webkit-scrollbar) {
+    [data-persona="dev"] :where(.dev-window, .dev-window *) {
+      scrollbar-color: #0f4c95 #dfdfdf;
+    }
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+    background: #c0c0c0;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-track {
+    background: repeating-conic-gradient(#dfdfdf 0% 25%, #ffffff 0% 50%) 0 0 / 4px 4px;
+    box-shadow: inset 1px 1px 0 #808080;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-thumb {
+    min-width: 28px;
+    min-height: 28px;
+    border: 1px solid #808080;
+    border-radius: 0;
+    background-color: #c0c0c0;
+    background-image: linear-gradient(#0f4c95, #0f4c95), linear-gradient(#0f4c95, #0f4c95), linear-gradient(#0f4c95, #0f4c95);
+    background-repeat: no-repeat;
+    background-size: 8px 1px;
+    background-position: center calc(50% - 3px), center, center calc(50% + 3px);
+    box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #404040;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-thumb:horizontal {
+    background-size: 1px 8px;
+    background-position: calc(50% - 3px) center, center, calc(50% + 3px) center;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-thumb:hover {
+    background-color: #c3ddf5;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-thumb:active {
+    background-color: #93bde6;
+    box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #ffffff;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #808080;
+    background-color: #c0c0c0;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 8px 8px;
+    box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #404040;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:vertical:decrement {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%230f4c95' d='M4 1 8 6H0Z'/%3E%3C/svg%3E");
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:vertical:increment {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%230f4c95' d='m4 7 4-5H0Z'/%3E%3C/svg%3E");
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:horizontal:decrement {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%230f4c95' d='M1 4 6 0v8Z'/%3E%3C/svg%3E");
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:horizontal:increment {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%230f4c95' d='M7 4 2 0v8Z'/%3E%3C/svg%3E");
+  }
+
+  /* One arrow at either end, not the platform's optional double buttons. */
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:increment:start,
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:decrement:end {
+    display: none;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:hover {
+    background-color: #c3ddf5;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-button:active {
+    box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #ffffff;
+  }
+
+  [data-persona="dev"] :where(.dev-window, .dev-window *)::-webkit-scrollbar-corner {
+    background: #c0c0c0;
+    box-shadow: inset 1px 1px 0 #ffffff;
+  }
 }
 
 [data-persona="dotm"] .macos-glass {
@@ -1010,15 +1116,47 @@ body:has(.admin-surface) {
   animation: signin-nudge-ring 4.2s ease-out infinite;
 }
 
+/* A small sideways nudge, followed by a rest, points out DEV's login control. */
+@keyframes dev-signin-nudge {
+  0%, 24%, 100% { transform: translateX(0); }
+  6%, 18% { transform: translateX(3px); }
+  12% { transform: translateX(-2px); }
+}
+
+.dev-signin-nudge {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 3px;
+  filter: drop-shadow(0 0 7px rgba(184, 224, 255, 0.85));
+  animation: dev-signin-nudge 2.1s ease-in-out infinite;
+}
+
+@keyframes dev-signin-halo {
+  0% { transform: scale(1); opacity: 0.8; }
+  32%, 100% { transform: scale(1.7); opacity: 0; }
+}
+
+.dev-signin-halo {
+  box-shadow: 0 0 12px rgba(184, 224, 255, 0.6);
+  animation: dev-signin-halo 2.1s ease-out infinite;
+}
+
+.dev-signin-nudge:hover,
+.dev-signin-nudge:focus-visible {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* The ring goes entirely and the icon holds still. What is left is a
      high-contrast control in a corner, which was always the fallback — the
      motion drew the eye, it never carried the meaning. */
   .signin-nudge,
+  .dev-signin-nudge,
+  .dev-signin-halo,
   .signin-nudge-ring {
     animation: none;
   }
-  .signin-nudge-ring {
+  .signin-nudge-ring,
+  .dev-signin-halo {
     display: none;
   }
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { SiteVideo } from "@/components/shared/SiteVideo";
+
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import { useWindowManager } from "@/components/window-manager/window-manager-context";
@@ -158,7 +160,7 @@ export function DotmVaultIcon() {
         className="group block w-full rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#ff0033] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       >
         <span className="relative block aspect-square w-full overflow-hidden rounded-full shadow-[0_10px_30px_-8px_rgba(0,0,0,0.9)] transition-transform group-hover:scale-105 group-active:scale-95">
-          <video
+          <SiteVideo
             src="/videos/dotm/vault-icon.mp4"
             autoPlay
             loop

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { NewsletterAdmin } from "@/components/admin/NewsletterAdmin";
 import { changeKeyFor, statPanels } from "@/content/stat-panels";
 
 /**
@@ -308,12 +309,15 @@ export default function AdminPage() {
           </p>
         )}
 
+        <NewsletterAdmin />
+
         {/* ── Live Stats panels ─────────────────────────────────────────── */}
         <Section title="Live Stats">
           <p className="mb-5 max-w-2xl text-sm text-gray-600">
-            The figures the Stats window shows in both views. None of these has a public
-            API, so they are kept by hand here. Leave a field blank and that metric shows a
-            dash rather than a number nobody entered. Changes appear on the next page load.
+            The figures the Stats window shows in both views. Automatic figures come from
+            the stats sync job. Manual figures, including Spotify Streams, are entered
+            from your platform dashboards. An override takes priority over the synced
+            figure; leave it blank to use the sync. Unset figures show a dash.
           </p>
           <p className="mb-5 max-w-2xl text-sm text-gray-600">
             <strong className="font-semibold">Change %</strong> is the movement on the

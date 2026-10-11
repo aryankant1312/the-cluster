@@ -239,7 +239,9 @@ export default function DevBootPage() {
     if (doneRef.current) return;
     if (!userRef.current) return;
     doneRef.current = true;
-    window.sessionStorage.setItem("dev-welcome", "1");
+    // The DEV desktop uses this only to stagger its icon reveal. It must not
+    // imply or trigger an application/window opening on arrival.
+    window.sessionStorage.setItem("dev-entry-animation", "1");
     router.push("/dev");
   }, [router]);
 
@@ -528,15 +530,25 @@ export default function DevBootPage() {
                       costume and removing it would leave a gap where the
                       visitor is looking, while a greyed control is exactly
                       what this era did to say "not yet". */}
-                  <button
-                    type="button"
-                    onClick={finish}
-                    disabled={!user}
-                    title={user ? "Confirm" : "Sign in below"}
-                    className="win98-border win98-press bg-persona-surface px-4 font-chrome text-base text-black active:translate-y-px disabled:cursor-not-allowed disabled:text-black/35 disabled:active:translate-y-0"
-                  >
-                    Confirm
-                  </button>
+                  {/* The wrapper receives hover even while Confirm is disabled. */}
+                  <div className="group/confirm relative flex">
+                    <button
+                      type="button"
+                      onClick={finish}
+                      disabled={!user}
+                      aria-describedby="dev-confirm-login-hint"
+                      className="win98-border win98-press bg-persona-surface px-4 font-chrome text-base text-black active:translate-y-px disabled:cursor-not-allowed disabled:text-black/35 disabled:active:translate-y-0"
+                    >
+                      Confirm
+                    </button>
+                    <span
+                      id="dev-confirm-login-hint"
+                      role="tooltip"
+                      className="pointer-events-none absolute bottom-[calc(100%+0.75rem)] right-0 z-50 hidden whitespace-nowrap border border-black bg-[#fffde8] px-3 py-2 font-chrome text-sm text-black shadow-[2px_2px_0_rgba(0,0,0,0.3)] group-hover/confirm:block"
+                    >
+                      Use the login button below
+                    </span>
+                  </div>
                 </div>
                 {phase === "login" && !user && (
                   <SignInIcon

@@ -51,9 +51,6 @@ export function StartMenu({ onNavigate }: { onNavigate?: () => void }) {
   // the Start menu is where this persona's visitors expect to find things,
   // and the quick-launch strip is an addition to it, not a replacement.
   const windowItems: Array<{ label: string; id: string }> = [
-    // The Story opens itself on first boot and has no launcher anywhere else,
-    // so trimming the taskbar left it reachable exactly once per session.
-    { label: "The Story", id: "welcome" },
     { label: "Book DOTM", id: "book" },
     { label: "Drops", id: "merch" },
     { label: "Cluster Wall", id: "cluster-wall" },

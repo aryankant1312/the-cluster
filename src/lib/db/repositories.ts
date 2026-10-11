@@ -385,23 +385,15 @@ export const newsletter = {
   async subscribe(email: string, source: string, ipHash = ""): Promise<boolean> {
     const d = await db();
     const key = email.trim().toLowerCase();
-    const existing = await d.get<{ email: string }>(
-      `SELECT email FROM newsletter_subscribers WHERE email = ?`,
-      [key],
-    );
-    if (existing) {
-      await d.run(
-        `UPDATE newsletter_subscribers SET source = ?, created_at = ? WHERE email = ?`,
-        [source, nowIso(), key],
-      );
-      return false;
-    }
-    await d.run(
+    const inserted = await d.get<{ email: string }>(
       `INSERT INTO newsletter_subscribers (email, source, created_at, ip_hash)
-       VALUES (?,?,?,?)`,
+       VALUES (?,?,?,?) ON CONFLICT(email) DO NOTHING RETURNING email`,
       [key, source, nowIso(), ipHash],
     );
-    return true;
+    if (inserted) return true;
+    // Preserve the first signup timestamp so a campaign's recipient snapshot stays stable.
+    await d.run(`UPDATE newsletter_subscribers SET source = ? WHERE email = ?`, [source,key]);
+    return false;
   },
 
   async list(limit = 500): Promise<NewsletterSubscriber[]> {

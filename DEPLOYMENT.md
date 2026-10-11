@@ -170,7 +170,8 @@ quota is spent once per cycle rather than once per visitor.
 | Spotify followers, popularity, releases | Spotify Web API, client credentials |
 | Instagram followers | **Scraped** from the public profile |
 | Spotify monthly listeners | **Scraped**, via headless Chromium |
-| YouTube unique viewers, Instagram views, playlist adds | Entered at `/admin` — dashboard-only, on no public page |
+| YouTube views (28d) | YouTube Analytics API with separate channel-owner read-only OAuth |
+| Instagram views, Spotify streams (28d) | Entered at `/admin` from the platform dashboards |
 
 Two figures are scraped because no API will supply them. Instagram's Graph API
 wants a Business account, a linked Facebook Page, four permissions and a
@@ -270,3 +271,7 @@ just `next build` and `next start`.
 | Sessions drop at random | `COOKIE_SECRET` differs between Production and Preview, or is unset |
 | YouTube tiles empty but the key is set | `YOUTUBE_CHANNEL_ID` holds a URL or `@handle` instead of the `UC...` id |
 | Map shows shapes but no city names | The Esri `..._Reference` labels layer is missing — the `..._Base` service has no text on it by design |
+
+## Newsletter and rolling analytics setup
+
+See [newsletter setup](docs/newsletter-setup.md) for Gmail SMTP, the two-inbox tests and manual broadcast approval. See [platform analytics setup](docs/platform-analytics-setup.md) for YouTube owner authorization and Spotify Streams entry. Domain verification steps for dotm.in on GoDaddy are in [Search Console setup](docs/search-console-setup.md).

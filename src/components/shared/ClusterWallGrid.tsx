@@ -1,5 +1,7 @@
 "use client";
 
+import { SiteVideo } from "./SiteVideo";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clusterWallTiles } from "@/content/cluster-wall.generated";
 import { useWindowLoadGate } from "@/components/window-manager/WindowLoadBoundary";
@@ -351,7 +353,7 @@ function WallClip({
   }, [audible, volume]);
 
   return (
-    <video
+    <SiteVideo
       ref={ref}
       src={src}
       // No poster: that would be a second file per clip to generate and ship,

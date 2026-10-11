@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Script from "next/script";
 import { usePersona } from "@/components/providers/PersonaProvider";
 import { embedUrlFor } from "@/lib/media-embed";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,19 @@ interface WallPostView {
   created_at: string;
 }
 
+type InstagramWindow = Window & {
+  instgrm?: { Embeds?: { process: () => void } };
+};
+
+const WALL_PLACEMENTS = [
+  "sm:col-span-7 sm:col-start-1 lg:col-span-5 lg:col-start-1 sm:-rotate-[0.8deg]",
+  "sm:col-span-5 sm:col-start-8 lg:col-span-4 lg:col-start-8 sm:-translate-x-8 sm:translate-y-5 sm:rotate-[1.1deg]",
+  "sm:col-span-5 sm:col-start-2 lg:col-span-4 lg:col-start-3 sm:translate-x-5 sm:-translate-y-12 sm:rotate-[0.6deg]",
+  "sm:col-span-6 sm:col-start-7 lg:col-span-5 lg:col-start-7 sm:-translate-x-9 sm:-translate-y-5 sm:-rotate-[1deg]",
+  "sm:col-span-6 sm:col-start-1 lg:col-span-4 lg:col-start-1 sm:translate-x-7 sm:-translate-y-14 sm:rotate-[1.3deg]",
+  "sm:col-span-5 sm:col-start-8 lg:col-span-4 lg:col-start-9 sm:-translate-x-7 sm:-translate-y-10 sm:-rotate-[0.5deg]",
+] as const;
+
 function timeAgo(iso: string): string {
   const secs = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
   if (secs < 60) return "just now";
@@ -52,6 +66,10 @@ export function ClusterWallFeed() {
   const [error, setError] = useState<string | null>(null);
   const [reported, setReported] = useState<Set<string>>(new Set());
 
+  const processInstagramEmbeds = useCallback(() => {
+    (window as InstagramWindow).instgrm?.Embeds?.process();
+  }, []);
+
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/wall");
@@ -69,6 +87,12 @@ export function ClusterWallFeed() {
     const timer = setTimeout(() => void load(), 0);
     return () => clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (!posts.some((post) => post.media_provider === "instagram")) return;
+    const timer = window.setTimeout(processInstagramEmbeds, 0);
+    return () => window.clearTimeout(timer);
+  }, [posts, processInstagramEmbeds]);
 
   const submit = async () => {
     setSending(true);
@@ -119,6 +143,12 @@ export function ClusterWallFeed() {
         isDotm ? "bg-[#0a0a0b] text-white" : "bg-persona-window-bg text-black",
       )}
     >
+      <Script
+        id="instagram-embed-script"
+        src="https://www.instagram.com/embed.js"
+        strategy="lazyOnload"
+        onReady={processInstagramEmbeds}
+      />
       <div className="mx-auto max-w-5xl px-5 py-8">
         <header className="text-center">
           <h2
@@ -228,12 +258,13 @@ export function ClusterWallFeed() {
               Nothing on the wall yet. Be the first.
             </p>
           ) : (
-            <ul className="flex flex-wrap items-start justify-center gap-4">
-              {posts.map((post) => (
+            <ul className="grid grid-cols-1 items-start gap-y-3 sm:grid-cols-12 sm:gap-x-2 sm:gap-y-0 lg:gap-x-3">
+              {posts.map((post, index) => (
                 <Card
                   key={post.id}
                   post={post}
                   isDotm={isDotm}
+                  placement={WALL_PLACEMENTS[index % WALL_PLACEMENTS.length]}
                   reported={reported.has(post.id)}
                   onReport={() => void report(post.id)}
                 />
@@ -249,50 +280,54 @@ export function ClusterWallFeed() {
 function Card({
   post,
   isDotm,
+  placement,
   reported,
   onReport,
 }: {
   post: WallPostView;
   isDotm: boolean;
+  placement: string;
   reported: boolean;
   onReport: () => void;
 }) {
-  const embed = embedUrlFor(post.media_provider, post.media_embed_id);
   const isInstagram = post.media_provider === "instagram";
   const isYouTube = post.media_provider === "youtube";
-  const isInstagramReel = isInstagram && /\/reels?\//i.test(post.media_url);
+  const embed = isYouTube ? embedUrlFor(post.media_provider, post.media_embed_id) : null;
 
   return (
     <li
       className={cn(
-        "overflow-hidden",
-        isInstagram
-          ? "w-full max-w-[540px]"
-          : isYouTube
-            ? "w-full max-w-[560px]"
-            : "w-full max-w-sm",
+        "w-full min-w-0 overflow-hidden transition-transform duration-300 hover:z-10 hover:rotate-0 hover:scale-[1.015]",
+        placement,
         isDotm
           ? "rounded-[var(--radius-window)] bg-white/5 ring-1 ring-white/10"
           : "win98-border bg-persona-surface",
       )}
     >
+      {isInstagram && post.media_url && (
+        <div className="w-full overflow-hidden bg-white [&_.instagram-media]:!m-0 [&_.instagram-media]:!min-w-0 [&_.instagram-media]:!max-w-none [&_.instagram-media]:!w-full">
+          <blockquote
+            className="instagram-media"
+            data-instgrm-permalink={post.media_url}
+            data-instgrm-version="14"
+            style={{ margin: 0, minWidth: 0, width: "100%" }}
+          >
+            <a href={post.media_url} target="_blank" rel="noopener noreferrer nofollow">
+              View this post on Instagram
+            </a>
+          </blockquote>
+        </div>
+      )}
+
       {embed && (
-        <div
-          className={cn(
-            "w-full bg-black",
-            isInstagram
-              ? isInstagramReel
-                ? "h-[760px]"
-                : "h-[660px]"
-              : "aspect-video",
-          )}
-        >
+        <div className="aspect-video w-full overflow-hidden bg-black">
           <iframe
             src={embed}
             title={post.author ? `Shared by ${post.author}` : "Fan submission"}
             className="block h-full w-full border-0"
             allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
             allowFullScreen
+            scrolling="no"
           />
         </div>
       )}
@@ -300,7 +335,7 @@ function Card({
       <div className="p-4">
         {post.body && <p className="font-body text-sm leading-relaxed">{post.body}</p>}
 
-        {post.media_url && !embed && (
+        {post.media_url && !embed && !isInstagram && (
           <a
             href={post.media_url}
             target="_blank"

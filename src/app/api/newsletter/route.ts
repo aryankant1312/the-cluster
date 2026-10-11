@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { hashIp, newsletter } from "@/lib/db/repositories";
+import { queueWelcome, WELCOME_ID } from "@/lib/newsletter/repository";
+import { sendOne, smtpConfigured } from "@/lib/newsletter/smtp";
+import { newsletterDb } from "@/lib/newsletter/schema";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 /**
  * Newsletter sign-up.
@@ -62,6 +66,7 @@ export async function POST(request: Request) {
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("Malformed request");
   } catch {
     return NextResponse.json({ ok: false, error: "Malformed request." }, { status: 400 });
   }
@@ -77,7 +82,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const created = await newsletter.subscribe(email, source, submitterHash(request));
+    const ipHash = submitterHash(request);
+    const db = await newsletterDb();
+    const recent = await db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM newsletter_subscribers WHERE ip_hash=? AND created_at>?`, [ipHash,new Date(Date.now()-3600000).toISOString()]);
+    if (Number(recent?.n || 0) >= 5) return NextResponse.json({ ok:false,error:"Too many signups. Please try later." },{status:429});
+    const created = await newsletter.subscribe(email, source, ipHash);
+    if (created) {
+      try {
+        await queueWelcome(email.toLowerCase());
+        if (smtpConfigured()) await sendOne(WELCOME_ID,email.toLowerCase());
+      } catch { /* Subscriber remains saved; pending welcomes can be resumed in admin. */ }
+    }
     const emailed = created ? await notifySubscriber(email, source) : true;
     return NextResponse.json({ ok: true, created, emailed });
   } catch {

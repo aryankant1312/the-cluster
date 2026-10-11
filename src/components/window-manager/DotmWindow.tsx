@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { motion, AnimatePresence, useDragControls } from "framer-motion";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { motion, AnimatePresence, useDragControls, useMotionValue } from "framer-motion";
 import { useWindowManager } from "./window-manager-context";
 import {
   desktopDragBounds,
@@ -79,10 +79,20 @@ export function DotmWindow({
   const wm = useWindowManager();
   const shellRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
   const [closing, setClosing] = useState(false);
   const [bounds, setBounds] = useState<ReturnType<typeof desktopDragBounds>>(undefined);
   const refreshBounds = useCallback(() => {
     const next = desktopDragBounds(shellRef.current);
+    if (next) {
+      const currentX = x.get();
+      const currentY = y.get();
+      const clampedX = Math.min(next.right, Math.max(next.left, currentX));
+      const clampedY = Math.min(next.bottom, Math.max(next.top, currentY));
+      if (clampedX !== currentX) x.set(clampedX);
+      if (clampedY !== currentY) y.set(clampedY);
+    }
     setBounds((current) => {
       if (!next || !current) return next;
       return current.left === next.left &&
@@ -92,7 +102,7 @@ export function DotmWindow({
         ? current
         : next;
     });
-  }, []);
+  }, [x, y]);
   // Measured, not assumed: a filled window has to start below the real top
   // bar, and the bar's height depends on the persona's typeface.
   const topInset = useTopBarInset();
@@ -123,6 +133,18 @@ export function DotmWindow({
   // centre and constrain a box that no longer exists.
   const offsets = useCenterOffsets(shellRef, undefined, undefined);
   const movable = effective !== "fill" && effective !== "fullscreen";
+
+  // A responsive clamp changes the rendered shell without changing its
+  // requested width/height. Recalculate after the centring margins catch up,
+  // then pull any old drag offset back into the newly smaller viewport.
+  useLayoutEffect(() => {
+    if (!movable) {
+      x.set(0);
+      y.set(0);
+    } else if (isOpen) {
+      refreshBounds();
+    }
+  }, [isOpen, movable, offsets.marginLeft, offsets.marginTop, refreshBounds, x, y]);
 
   useEffect(() => {
     if (!isOpen || !movable) return;
@@ -212,6 +234,8 @@ export function DotmWindow({
           data-dotm-window
           aria-hidden={parked || undefined}
           style={{
+            x,
+            y,
             position: "absolute",
             ...(parked
               ? { visibility: "hidden" as const, pointerEvents: "none" as const }
@@ -231,7 +255,7 @@ export function DotmWindow({
             top: "50%",
             marginTop: offsets.marginTop,
             ...(effective === "right"
-              ? { right: "4%", left: "auto", marginLeft: 0 }
+              ? { right: WINDOW_EDGE_INSET, left: "auto", marginLeft: 0 }
               : { left: "50%", marginLeft: offsets.marginLeft }),
             // Spread last so a filled window overrides the centring above
             // outright rather than fighting it.

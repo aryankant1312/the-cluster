@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { SiteVideo } from "@/components/shared/SiteVideo";
 
 export function DevDesktopWallpaper({ src, poster }: { src: string; poster?: string }) {
   const a = useRef<HTMLVideoElement>(null);
@@ -62,8 +63,8 @@ export function DevDesktopWallpaper({ src, poster }: { src: string; poster?: str
   }, [src]);
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-black">
-      <video ref={a} src={src} poster={poster} muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
-      <video ref={b} src={src} muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-0" />
+      <SiteVideo ref={a} src={src} poster={poster} muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+      <SiteVideo ref={b} src={src} muted playsInline preload="auto" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-0" />
     </div>
   );
 }

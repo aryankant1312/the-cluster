@@ -50,10 +50,6 @@ const MusicPlayerWindow = dynamic(
     withWindowLoader(() => import("@/components/dev/window-content/MusicPlayerWindow")).then((m) => m.MusicPlayerWindow),
   { ssr: false, loading: () => <WindowLoading label="Player" /> },
 );
-const StoryWindow = dynamic(
-  () => withWindowLoader(() => import("@/components/shared/StoryWindow")).then((m) => m.StoryWindow),
-  { ssr: false, loading: () => <WindowLoading label="The Story" /> },
-);
 /**
  * Drops shows the teaser, not the shop. `MerchDrops` is a complete storefront
  * and is still in the tree — switching this one import back is the whole of
@@ -67,8 +63,8 @@ const LiveStats = dynamic(
   () => withWindowLoader(() => import("@/components/shared/LiveStats")).then((m) => m.LiveStats),
   { ssr: false, loading: () => <WindowLoading label="Live Stats" /> },
 );
-const ShootOnSightWindow = dynamic(
-  () => withWindowLoader(() => import("@/components/shared/ShootOnSightWindow")).then((m) => m.ShootOnSightWindow),
+const ShootAtSiteMaintenance = dynamic(
+  () => withWindowLoader(() => import("@/components/shared/ShootAtSiteMaintenance")).then((m) => m.ShootAtSiteMaintenance),
   { ssr: false, loading: () => <WindowLoading label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
@@ -180,8 +176,8 @@ export default function DevDesktopPage() {
   }, []);
 
   useEffect(() => {
-    const justBooted = window.sessionStorage.getItem("dev-welcome") === "1";
-    window.sessionStorage.removeItem("dev-welcome");
+    const animateEntry = window.sessionStorage.getItem("dev-entry-animation") === "1";
+    window.sessionStorage.removeItem("dev-entry-animation");
 
     let cancelled = false;
     for (let i = 0; i < TOTAL_ICONS; i++) {
@@ -189,21 +185,13 @@ export default function DevDesktopPage() {
         () => {
           if (!cancelled) setIconsVisible((v) => Math.max(v, i + 1));
         },
-        justBooted ? i * 80 : 0,
+        animateEntry ? i * 80 : 0,
       );
     }
 
-    if (justBooted) {
-      const timer = setTimeout(() => wm.openWindow("welcome"), TOTAL_ICONS * 80 + 200);
-      return () => {
-        cancelled = true;
-        clearTimeout(timer);
-      };
-    }
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const revealed = (index: number) =>
@@ -306,21 +294,6 @@ export default function DevDesktopPage() {
 
       {/* Every window centres itself and opens windowed — nothing opens
           maximized, which was cropping content against the taskbar. */}
-      {/* "The Story" — two carousels behind two tabs, in DEV's chrome.
-          Fullscreen, like the Vault: both panels are edge-to-edge artwork, and
-          a filled window still left a top bar and a taskbar framing a
-          carousel that is meant to be the whole view. The maximize button is
-          live here and Escape closes it, because covering the chrome removes
-          every other way back to the desktop. */}
-      <DevWindow
-        id="welcome"
-        title="The Story"
-        placement="fullscreen"
-        fullSurface
-        titleClassName="text-lg sm:text-xl"
-      >
-        <StoryWindow />
-      </DevWindow>
       <DevWindow id="book" title="Book DOTM" width="82vw" height="70vh">
         <BookDotm />
       </DevWindow>
@@ -401,13 +374,13 @@ export default function DevDesktopPage() {
           its own edges and its own scroller, so the shell's padding and sky
           would only be a second frame inside the first. */}
       <DevWindow id="shoot-on-sight" title="Shoot at Site" placement="fullscreen" fullSurface>
-        <ShootOnSightWindow isDotm={false} />
+        <ShootAtSiteMaintenance isDotm={false} />
       </DevWindow>
       <DevWindow id="shows" title="Shows" placement="fullscreen" fullSurface>
         <ShowsExperience />
       </DevWindow>
       <DevWindow id="services" title="Services" placement="fullscreen" fullSurface>
-        <ServicesWindow />
+        <ServicesWindow persona="dev" />
       </DevWindow>
       <DevWindow id="merch" title="Drops" placement="fullscreen" fullSurface>
         <ComingSoonDrop />

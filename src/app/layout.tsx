@@ -190,6 +190,8 @@ const king = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://dotm.in"),
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION || undefined },
   title: "THE CLUSTER — devilonthemic",
   description: "DOTM. Two faces. One cluster.",
 };

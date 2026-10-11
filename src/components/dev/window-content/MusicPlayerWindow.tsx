@@ -175,11 +175,17 @@ export function MusicPlayerWindow({
         />
       )}
 
-      {/* The sleeve. `min-h-0` + `flex-1` is what lets it take the room left
-          over after the fixed rows below instead of forcing the window to
-          scroll — an aspect-ratio box here would win the size negotiation and
-          push the transport out of frame on a short viewport. */}
-      <div className="win98-border relative min-h-0 flex-1 bg-black">
+      {/* The available stage may be wide or short, but cover art is square.
+          Container units choose the smaller live dimension, so the sleeve
+          stays square without pushing the fixed controls below the fold. */}
+      <div
+        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden"
+        style={{ containerType: "size" }}
+      >
+        <div
+          className="win98-border relative aspect-square max-h-full max-w-full bg-black"
+          style={{ width: "min(100%, 100cqh)" }}
+        >
         <Image
           src={trackArtwork(track)}
           alt={track.title}
@@ -213,6 +219,7 @@ export function MusicPlayerWindow({
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
 
       {/* Scrubber */}

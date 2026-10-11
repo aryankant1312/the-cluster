@@ -1,234 +1,202 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { shootLocations } from "@/content/shoot-on-sight";
-import { useWindowLoadGate } from "@/components/window-manager/WindowLoadBoundary";
-import { cn } from "@/lib/utils";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import localFont from "next/font/local";
+import { gsap } from "gsap";
+import { ArrowLeft, ArrowUpRight, Film, MapPin } from "lucide-react";
+import { shootSiteProperties, shootSiteTracks, type ShootSiteTrack } from "@/content/shoot-at-site";
+import { trackArtwork, trackById } from "@/content/tracks";
+import { SiteVideo } from "./SiteVideo";
+import styles from "./ShootOnSightWindow.module.css";
 
-/**
- * SHOOT ON SIGHT — where the work was made, grouped by place.
- *
- * A PLACEHOLDER THAT IS NOT A STUB. The content list is empty and the layout
- * around it is finished: drop entries into `content/shoot-on-sight.ts` and this
- * fills in, with no edit here. What is on screen until then is an empty state
- * naming the two files to add to, because a blank panel teaches nobody what it
- * is waiting for.
- *
- * GROUPED, NOT A FLAT GRID. A location with four photographs of it is one place
- * seen four ways, and a flat wall of images loses that — which is the whole
- * difference between this window and the Cluster Wall next door.
- *
- * DATE AND CREDIT SIT WITH THE PLACE, NOT THE PICTURE. They are facts about a
- * shoot, and repeating them under every frame of the same shoot is noise. A
- * per-item credit still shows, for the frames somebody else took.
- *
- * TWO COLUMNS, AND THE RIGHT ONE IS A LOOP. Each persona has a clip that says
- * its name was here; it runs down the right-hand side while the places run
- * down the left. Both columns exist in both states — the empty one included,
- * where the loop is the only thing on screen and is the better half of it.
- */
+const editorial = localFont({
+  src: [
+    { path: "../../../assets/fonts/playfair-display-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "../../../assets/fonts/playfair-display-700-italic.woff2", weight: "700", style: "italic" },
+  ],
+  variable: "--font-shoot-editorial",
+  display: "swap",
+});
 
-/**
- * The persona's own "was here" loop.
- *
- * Two files rather than one with a swapped tint: they are separately shot and
- * separately lettered, and the whole point of the panel is which name is on
- * the wall.
- */
-const MARK_CLIP = {
-  dotm: "/videos/shoot-on-sight/dotm-was-here.mp4",
-  dev: "/videos/shoot-on-sight/dev-was-here.mp4",
-} as const;
-
-/**
- * How much of the window the loop takes.
- *
- * A fraction rather than a fixed width, because this window opens fullscreen
- * now: a 420px column that reads as a panel on a laptop reads as a strip on a
- * 4K display. It stacks above the content below the `lg` breakpoint — 38% of
- * a phone is not a column.
- */
-const CLIP_COLUMN = "lg:w-[38%] lg:max-w-[620px]";
-
-/**
- * How long the loader will wait on the clip before standing down anyway.
- *
- * A safety net, not the mechanism. `loadeddata` is what normally clears it; a
- * clip that errors, is blocked, or is served from a cold CDN must not be able
- * to leave a loader on screen for ever in front of a window that is otherwise
- * perfectly usable.
- */
-const CLIP_WAIT_MS = 4000;
+function artworkFor(track: ShootSiteTrack) {
+  if (track.artwork) return track.artwork;
+  const catalogueTrack = trackById(track.id);
+  if (!catalogueTrack) return "";
+  const artwork = trackArtwork(catalogueTrack);
+  return typeof artwork === "string" ? artwork : artwork.src;
+}
 
 export function ShootOnSightWindow({ isDotm }: { isDotm: boolean }) {
-  const locations = shootLocations();
-  const ground = isDotm ? "bg-[#0a0a0b] text-white" : "bg-persona-window-bg text-black";
+  const [trackId, setTrackId] = useState<string | null>(null);
+  const [propertyId, setPropertyId] = useState<string | null>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const returnCard = useRef<string | null>(null);
+  const track = shootSiteTracks.find((item) => item.id === trackId);
+  const properties = shootSiteProperties.filter((item) => track?.propertyIds.includes(item.id));
+  const property = properties.find((item) => item.id === propertyId);
 
-  /**
-   * WHEN THIS WINDOW COUNTS AS LOADED.
-   *
-   * The clip down the right-hand side is the heaviest thing here by an order
-   * of magnitude — about 4.5MB against a list of text — so it is what the
-   * loader waits on. Everything else is on screen long before it.
-   *
-   * Three things can clear it, and none of them is an effect writing state
-   * synchronously: `loadeddata` on the clip (the ordinary path), an `error` on
-   * it (a clip that will never arrive must not hold the window hostage), and
-   * the timeout below as a backstop. The reset when the persona changes is the
-   * render-time adjustment — React's documented way to reset state when a prop
-   * changes — because switching persona swaps the file underneath and the new
-   * one has not loaded yet.
-   */
-  const [ready, setReady] = useState(false);
-  const [shownPersona, setShownPersona] = useState(isDotm);
-  useWindowLoadGate(!ready);
+  useLayoutEffect(() => {
+    scroller.current?.scrollTo({ top: 0 });
+    if (trackId) heading.current?.focus({ preventScroll: true });
+    else if (returnCard.current) {
+      scroller.current?.querySelector<HTMLButtonElement>(`[data-track-id="${returnCard.current}"]`)?.focus({ preventScroll: true });
+      returnCard.current = null;
+    }
+  }, [trackId, propertyId]);
 
-  if (shownPersona !== isDotm) {
-    setShownPersona(isDotm);
-    setReady(false);
+  function openTrack(id: string) {
+    returnCard.current = id;
+    setPropertyId(null);
+    setTrackId(id);
   }
 
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), CLIP_WAIT_MS);
-    return () => clearTimeout(t);
-  }, [isDotm]);
+  function allTracks() {
+    setPropertyId(null);
+    setTrackId(null);
+  }
 
   return (
-    <div className={cn("relative flex h-full w-full flex-col lg:flex-row", ground)}>
-      {/* ── The places ──────────────────────────────────────────────────
-          `min-h-0` on a flex child that scrolls. Without it the child's
-          min-content height wins over `overflow-y-auto` and the column grows
-          to fit its contents instead of scrolling inside them — which on a
-          fullscreen window pushes the loop off the bottom of the screen. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {locations.length === 0 ? (
-          <div className="flex h-full w-full items-center justify-center px-8 py-10 text-center">
-            <div className="max-w-md">
-              <p className="font-headline text-2xl uppercase tracking-[0.18em]">
-                Shoot at Site
-              </p>
+    <div ref={scroller} className={`${styles.root} ${editorial.variable}`} data-theme={isDotm ? "dotm" : "dev"}>
+      <header className={styles.navbar}>
+        <button className={styles.logo} onClick={allTracks} aria-label="Shoot at Site — all tracks">Shoot at Site</button>
+        <nav aria-label="Shoot at Site navigation" className={styles.navLinks}>
+          <button onClick={allTracks}>Tracks</button>
+          <span aria-hidden="true">/</span>
+          <span>{track ? "Shoot story" : "Locations & stories"}</span>
+        </nav>
+        <span className={styles.persona}>{isDotm ? "DOTM" : "DEV"} / 07 TRACKS</span>
+      </header>
+
+      {!track ? (
+        <main className={styles.parent}>
+          <div className={styles.status}><span aria-hidden="true" /> SHOOT ARCHIVE <b>Music / places / process</b></div>
+          <TrackConstellation onSelect={openTrack} />
+          <section className={styles.intro}>
+            <p className={styles.eyebrow}>BEHIND THE MUSIC VIDEO</p>
+            <h1>Every track.<br /><em>A place. A story.</em></h1>
+            <p>Explore where we shot and how we made it.</p>
+            <div className={styles.ctas}>
+              <button className={styles.solidButton} onClick={() => openTrack(shootSiteTracks[0].id)}>Explore the shoots <ArrowUpRight size={16} /></button>
+              <span className={styles.hint}>Hover to focus · Select a track to enter</span>
             </div>
+          </section>
+          <footer className={styles.footer}><span>SHOOT AT SITE</span><span>07 TRACKS / LOCATION DETAILS PENDING</span></footer>
+        </main>
+      ) : (
+        <main className={styles.child}>
+          <div className={styles.breadcrumbs}>
+            <button className={styles.backButton} onClick={allTracks}><ArrowLeft size={15} /> All tracks</button>
+            {property && <button className={styles.backButton} onClick={() => setPropertyId(null)}><ArrowLeft size={15} /> {track.title} locations</button>}
           </div>
-        ) : (
-          <div className="mx-auto max-w-5xl px-6 py-8">
-            {locations.map((group) => (
-              <section key={group.location} className="mb-10 last:mb-0">
-                <header className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h2 className="font-headline text-xl uppercase tracking-[0.14em]">
-                    {group.location}
-                  </h2>
-                  <span
-                    className={cn(
-                      "font-chrome text-[11px] uppercase tracking-[0.2em]",
-                      isDotm ? "text-white/45" : "text-black/50",
-                    )}
-                  >
-                    {group.city}
-                    {/* Written out rather than left as an ISO string:
-                        `2025-06-21` is a value, not a caption. */}
-                    {group.date ? ` · ${formatDate(group.date)}` : ""}
-                  </span>
-                </header>
-
-                <div className="columns-2 gap-3 sm:columns-3">
-                  {group.items.map((item) => (
-                    <figure
-                      key={item.id}
-                      className="mb-3 break-inside-avoid overflow-hidden rounded-lg"
-                    >
-                      {/* Plain `<img>`, as on the Cluster Wall: some of this
-                          will be motion, and the optimizer hands back a still
-                          first frame. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.src}
-                        alt={item.alt ?? item.location}
-                        loading="lazy"
-                        decoding="async"
-                        className="block w-full"
-                      />
-                      {item.credit && (
-                        <figcaption
-                          className={cn(
-                            "px-1 pt-1.5 font-chrome text-[10px] uppercase tracking-[0.18em]",
-                            isDotm ? "text-white/35" : "text-black/45",
-                          )}
-                        >
-                          {item.credit}
-                        </figcaption>
-                      )}
-                    </figure>
-                  ))}
-                </div>
+          <header className={styles.childHeader}>
+            <p className={styles.eyebrow}>{property ? "THE LOCATION / THE STORY" : "THE TRACK / THE LOCATIONS"}</p>
+            <h1 ref={heading} tabIndex={-1}>{property?.name ?? track.title}</h1>
+            <p>{property ? [property.city, property.date].filter(Boolean).join(" · ") || track.title : "The places and process behind the music video."}</p>
+          </header>
+          <div className={styles.storyLayout}>
+            <div className={styles.storyContent}>
+              {!property ? (
+                <section className={styles.panel}>
+                  <div className={styles.sectionTitle}><MapPin size={18} /><h2>Shoot locations</h2><span>{properties.length ? String(properties.length).padStart(2, "0") : "PENDING"}</span></div>
+                  {properties.length ? (
+                    <div className={styles.propertyGrid}>{properties.map((item) => (
+                      <button key={item.id} className={styles.propertyCard} onClick={() => setPropertyId(item.id)}>
+                        <span>{item.name}</span><small>{item.city ?? "City pending"}</small><ArrowUpRight size={18} />
+                      </button>
+                    ))}</div>
+                  ) : <p className={styles.pending}>Property names and location details are pending. They’ll appear here when supplied.</p>}
+                </section>
+              ) : (
+                <>
+                  <section className={styles.panel}><div className={styles.sectionTitle}><Film size={18} /><h2>How we shot it</h2></div><p className={property.story ? styles.storyText : styles.pending}>{property.story ?? "Shoot story pending."}</p></section>
+                  <section className={styles.panel}>
+                    <div className={styles.sectionTitle}><h2>From the shoot</h2><span>WEBSITE EXCLUSIVE</span></div>
+                    {property.media.length ? <div className={styles.mediaGrid}>{property.media.map((media) => (
+                      <figure key={media.id}>
+                        {media.kind === "video" ? <SiteVideo src={media.src} aria-label={media.alt} autoPlay muted loop playsInline preload="metadata" /> : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={media.src} alt={media.alt} loading="lazy" decoding="async" />
+                        )}
+                        {media.credit && <figcaption>{media.credit}</figcaption>}
+                      </figure>
+                    ))}</div> : <p className={styles.pending}>Exclusive photos and clips will be added here. Publicly viewable on this website.</p>}
+                  </section>
+                  {property.publicLinks.length > 0 && <section className={styles.panel}><div className={styles.sectionTitle}><h2>Publicly released media</h2></div><div className={styles.publicLinks}>{property.publicLinks.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label}<ArrowUpRight size={16} /></a>)}</div></section>}
+                </>
+              )}
+              <section className={styles.panel}>
+                <div className={styles.sectionTitle}><Film size={18} /><h2>Official music video</h2></div>
+                {track.musicVideoUrl ? <a className={styles.solidButton} href={track.musicVideoUrl} target="_blank" rel="noopener noreferrer">Watch on YouTube <ArrowUpRight size={16} /></a> : <p className={styles.pending}>YouTube music-video link pending.</p>}
               </section>
-            ))}
+              {!property && <section className={styles.panel}><div className={styles.sectionTitle}><h2>Exclusive shoot media</h2><span>COMING LATER</span></div><p className={styles.pending}>Photos and behind-the-scenes clips will live on each property’s page, publicly viewable here.</p></section>}
+            </div>
+            <MarkLoop />
           </div>
-        )}
-      </div>
-
-      {/* ── The loop ────────────────────────────────────────────────────
-          A hairline between the two columns rather than a filled panel: the
-          clip has its own edges, and a second frame around it reads as a
-          picture of a video. The rule sits on the left on `lg` and on the top
-          below it, because the columns have stacked by then and a left border
-          on a full-width row is a stray vertical line. */}
-      <aside
-        className={cn(
-          "shrink-0 border-t lg:border-t-0 lg:border-l",
-          isDotm ? "border-white/12" : "border-black/12",
-          CLIP_COLUMN,
-        )}
-      >
-        {/*
-          `muted` is not decoration, it is what makes `autoPlay` legal — every
-          browser refuses an unmuted autoplay outright. `playsInline` is what
-          stops iOS taking the clip fullscreen on its own.
-
-          NO CONTROLS, AND `preload="metadata"`. This is wallpaper with a name
-          on it rather than something to scrub, and at ~4.5MB apiece an eager
-          fetch would be spent on a window most visitors never open. It costs
-          nothing to be careful here: the component is behind `next/dynamic`
-          and a closed window, so neither file is requested until the window
-          is actually opened.
-
-          `object-cover` on a full-height box, so the clip fills its column and
-          crops rather than letterboxing — a surface, not a player with black
-          bars around it.
-        */}
-        <video
-          key={isDotm ? "dotm" : "dev"}
-          // Both clear the loader. `error` as well as `loadeddata`, because a
-          // clip that 404s or is refused would otherwise leave the window
-          // behind a loader until the backstop timer expired.
-          onLoadedData={() => setReady(true)}
-          onError={() => setReady(true)}
-          src={isDotm ? MARK_CLIP.dotm : MARK_CLIP.dev}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          aria-label={isDotm ? "DOTM was here" : "DEV was here"}
-          className="h-[42vh] w-full object-cover lg:h-full"
-        />
-      </aside>
+        </main>
+      )}
     </div>
   );
 }
 
-/**
- * `2025-06-21` → `21 Jun 2025`.
- *
- * Parsed by hand rather than through `new Date(iso)`: that constructor reads a
- * bare `YYYY-MM-DD` as UTC midnight and then renders it in the viewer's zone,
- * so anybody west of Greenwich is shown the day before.
- */
-function formatDate(iso: string): string {
-  const [year, month, day] = iso.split("-").map(Number);
-  if (!year || !month || !day) return iso;
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-  return `${day} ${months[month - 1]} ${year}`;
+function TrackConstellation({ onSelect }: { onSelect: (id: string) => void }) {
+  const canvas = useRef<HTMLDivElement>(null);
+  const [paths, setPaths] = useState<string[]>([]);
+  const gradientId = useId().replace(/:/g, "");
+
+  useEffect(() => {
+    const element = canvas.current;
+    if (!element) return;
+    let frame = 0;
+    function measure() {
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      const cards = [...element.querySelectorAll<HTMLElement>("[data-track-id]")];
+      const centres = cards.map((card) => {
+        const box = card.getBoundingClientRect();
+        return { x: box.left - rect.left + box.width / 2, y: box.top - rect.top + box.height / 2 };
+      });
+      const centre = centres[0];
+      if (!centre) return;
+      setPaths(centres.slice(1).map((point) => `M ${centre.x} ${centre.y} C ${centre.x} ${point.y}, ${point.x} ${centre.y}, ${point.x} ${point.y}`));
+    }
+    const observer = new ResizeObserver(() => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); });
+    observer.observe(element);
+    element.querySelectorAll<HTMLElement>("[data-track-id]").forEach((card) => observer.observe(card));
+    frame = requestAnimationFrame(measure);
+    const animation = gsap.matchMedia();
+    animation.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.fromTo(element.querySelectorAll("[data-track-id]"), { opacity: 0 }, { opacity: 1, duration: 1.1, stagger: 0.07, ease: "power4.out", clearProps: "opacity" });
+    });
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); animation.revert(); };
+  }, []);
+
+  return (
+    <div ref={canvas} className={styles.constellation} aria-label="Seven music-video shoot stories">
+      <svg className={styles.connections} width="100%" height="100%" aria-hidden="true">
+        <defs><linearGradient id={gradientId}><stop stopColor="#c9b8a0" stopOpacity=".9" /><stop offset="1" stopColor="#a78b71" stopOpacity=".1" /></linearGradient></defs>
+        {paths.map((path, index) => <g key={index}><path d={path} className={styles.nodeLine} stroke={`url(#${gradientId})`} /><path d={path} className={styles.flowLine} /></g>)}
+      </svg>
+      {shootSiteTracks.map((track, index) => (
+        <button key={track.id} data-track-id={track.id} data-node={index} className={styles.trackCard} onClick={() => onSelect(track.id)} aria-label={`Explore ${track.title} shoot locations and story`}>
+          {/* Existing release artwork is a preview until actual shoot media arrives. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className={styles.artwork} src={artworkFor(track)} alt="" decoding="async" draggable={false} />
+          <span className={styles.cardShade} aria-hidden="true" />
+          <span className={styles.cardIndex}>0{index + 1} / MUSIC VIDEO</span>
+          <span className={styles.cardCaption}><span className={styles.cardSymbol}><Film size={16} /></span><span><strong>{track.title}</strong><small>EXPLORE THE SHOOT</small></span><ArrowUpRight className={styles.cardArrow} size={18} /></span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MarkLoop() {
+  const [failed, setFailed] = useState(false);
+  return (
+    <aside className={styles.markPanel}>
+      <SiteVideo src="/videos/shoot-on-sight/dotm-was-here.mp4" aria-label="DOTM was here" autoPlay loop muted playsInline preload="metadata" onError={() => setFailed(true)} />
+      <div className={styles.markCaption}><span className={styles.eyebrow}>ON LOCATION</span><p>DOTM was here.</p>{failed && <small>Clip unavailable.</small>}</div>
+    </aside>
+  );
 }

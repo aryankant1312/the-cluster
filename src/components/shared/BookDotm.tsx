@@ -115,28 +115,27 @@ export function BookDotm() {
   const isDotm = persona === "dotm";
   const wm = useWindowManager();
 
-  /**
-   * Back to Contact, from every step.
-   *
-   * Booking is opened *from* the contact window, and until now the only way
-   * back was to close this window and find that one again — a dead end at the
-   * exact moment someone decides they would rather just send an email. It goes
-   * to Contact rather than one step back on purpose: step one has no previous
-   * step, and step two already carries its own "change what you're asking for"
-   * control. One button that always means the same thing beats one that means
-   * two different things depending on where you are.
-   */
-  const backToContact = () => {
-    wm.closeWindow("book");
-    wm.openWindow("contact");
-  };
-
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [enquiry, setEnquiry] = useState<EnquiryType | null>(null);
   const [values, setValues] = useState<Values>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+
+  /**
+   * Return one step at a time, keeping the entered enquiry details. From the picker,
+   * the same control returns to Contact, where the booking flow was opened.
+   */
+  const goBack = () => {
+    if (sending) return;
+    if (step > 0) {
+      setStep(step === 2 ? 1 : 0);
+      setErrors({});
+      return;
+    }
+    wm.closeWindow("book");
+    wm.openWindow("contact");
+  };
 
   const set = (key: keyof Values, v: string) => setValues((p) => ({ ...p, [key]: v }));
   const shows = (f: DetailField) => enquiry !== null && FIELDS_FOR[enquiry].includes(f);
@@ -187,9 +186,10 @@ export function BookDotm() {
           pushing the centred title off centre — which is what putting it in the
           flow would do. */}
       <header className="relative shrink-0 px-5 pt-5 pb-3 text-center">
-        <button
+        {step !== 1 && <button
           type="button"
-          onClick={backToContact}
+          onClick={goBack}
+          aria-label={step === 2 ? "Back to enquiry details" : "Back to contact"}
           className={cn(
             // TITLE CASE THROUGHOUT THIS WINDOW, which is why every `uppercase`
             // that used to be in these class lists has gone. The tracking
@@ -203,8 +203,8 @@ export function BookDotm() {
           )}
         >
           <span aria-hidden="true">←</span>
-          Contact
-        </button>
+          Back
+        </button>}
 
         <h2
           className={cn(
@@ -294,13 +294,16 @@ export function BookDotm() {
                 <Legend isDotm={isDotm}>{ENQUIRY_LABELS[enquiry]}</Legend>
                 <button
                   type="button"
-                  onClick={() => setStep(0)}
+                  onClick={goBack}
+                  disabled={sending}
+                  aria-label="Back to booking options"
                   className={cn(
-                    "font-body text-xs underline",
+                    "inline-flex items-center gap-1.5 font-body text-xs underline disabled:cursor-not-allowed disabled:opacity-50",
                     isDotm ? "text-white/60 hover:text-white" : "text-black/60 hover:text-black",
                   )}
                 >
-                  Change
+                  <span aria-hidden="true">←</span>
+                  Back
                 </button>
               </div>
 

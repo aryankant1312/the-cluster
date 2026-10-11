@@ -13,7 +13,7 @@
 
 .item {
   position: relative;
-  min-height: clamp(7rem, 10.5vw, 9.5rem);
+  min-height: clamp(5.6rem, 8.4vw, 7.6rem);
   overflow: hidden;
   border-top: 1px solid rgba(255, 255, 255, 0.35);
   text-align: left;
@@ -32,7 +32,7 @@
   grid-template-columns: clamp(3rem, 7vw, 7rem) minmax(0, 1fr) auto;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem clamp(1.25rem, 4vw, 4rem);
+  padding: 1.2rem clamp(1.25rem, 4vw, 4rem);
   border: 0;
   background: transparent;
   color: #fff;
@@ -53,7 +53,7 @@
   display: block;
   max-width: 13ch;
   font-family: Arial Black, Arial, sans-serif;
-  font-size: clamp(1.45rem, 3.25vw, 3.4rem);
+  font-size: clamp(1.45rem, 2.6vw, 2.72rem);
   font-weight: 900;
   letter-spacing: -0.075em;
   line-height: 0.82;
@@ -64,7 +64,7 @@
 .tags {
   display: block;
   max-width: 58rem;
-  margin-top: 1rem;
+  margin-top: 0.8rem;
   color: rgba(255, 255, 255, 0.58);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: clamp(0.58rem, 1vw, 0.75rem);
@@ -127,7 +127,7 @@
 .marqueePart span {
   white-space: nowrap;
   font-family: Arial Black, Arial, sans-serif;
-  font-size: clamp(1.45rem, 3.15vw, 3.3rem);
+  font-size: clamp(1.45rem, 2.52vw, 2.64rem);
   font-weight: 900;
   letter-spacing: -0.07em;
   line-height: 0.85;
@@ -136,7 +136,7 @@
 
 .marqueeImage {
   width: clamp(8rem, 15vw, 14rem);
-  height: clamp(4.5rem, 8vw, 7.5rem);
+  height: clamp(3.6rem, 6.4vw, 6rem);
   flex: none;
   border: 2px solid #000;
   border-radius: 999px;
@@ -147,13 +147,13 @@
 
 @media (max-width: 640px) {
   .item {
-    min-height: 7.5rem;
+    min-height: 6rem;
   }
 
   .itemLink {
     grid-template-columns: 2rem minmax(0, 1fr) auto;
     gap: 0.55rem;
-    padding: 1.25rem 1rem;
+    padding: 1rem;
   }
 
   .tags {

@@ -195,8 +195,9 @@ export function MagnificationDock({
     <motion.div
       onMouseMove={({ pageX }) => mouseX.set(pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className={`${className} macos-glass flex items-end gap-3 rounded-[calc(var(--radius-window)+6px)] px-4 pb-3 pt-2 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.75)]`}
-      style={{ minHeight: panelHeight }}
+      className={`${className} macos-glass flex items-end rounded-[calc(var(--radius-window)+6px)] px-4 pb-3 pt-2 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.75)]`}
+      // Increase the original 12px icon gap by exactly 15%.
+      style={{ minHeight: panelHeight, gap: "calc(0.75rem * 1.15)" }}
       role="toolbar"
       aria-label="DOTM dock"
     >

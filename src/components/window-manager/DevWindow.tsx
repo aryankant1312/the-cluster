@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { type StaticImageData } from "next/image";
-import { motion, useDragControls } from "framer-motion";
+import { motion, useDragControls, useMotionValue } from "framer-motion";
 import { useWindowManager } from "./window-manager-context";
 import {
   BOTTOM_BAR_SAFE_AREA,
@@ -17,6 +17,10 @@ const MENU_ITEMS = ["File", "Edit", "View", "Go", "Help"];
 
 /** Side inset for a filled window, so it still reads as a window. */
 const FILL_INSET = 10;
+/** Air between a normal window and the webpage's left/right edges. */
+const WINDOW_EDGE_INSET = 8;
+const RESTORED_WIDTH = "min(88vw, 1120px)";
+const RESTORED_HEIGHT = "min(76vh, 760px)";
 
 export function DevWindow({
   id,
@@ -94,9 +98,31 @@ export function DevWindow({
   const wm = useWindowManager();
   const shellRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
   const [bounds, setBounds] = useState<ReturnType<typeof desktopDragBounds>>(undefined);
+  const refreshBounds = useCallback(() => {
+    const next = desktopDragBounds(shellRef.current);
+    if (next) {
+      const currentX = x.get();
+      const currentY = y.get();
+      const clampedX = Math.min(next.right, Math.max(next.left, currentX));
+      const clampedY = Math.min(next.bottom, Math.max(next.top, currentY));
+      if (clampedX !== currentX) x.set(clampedX);
+      if (clampedY !== currentY) y.set(clampedY);
+    }
+    setBounds((current) => {
+      if (!next || !current) return next;
+      return current.left === next.left &&
+        current.top === next.top &&
+        current.right === next.right &&
+        current.bottom === next.bottom
+        ? current
+        : next;
+    });
+  }, [x, y]);
 
   // Windowed by default. `placement="fill"` is the one exception, for
   // surfaces that are an experience rather than a document — it still stops
@@ -114,21 +140,27 @@ export function DevWindow({
    */
   const [expanded, setExpanded] = useState(true);
   const canFullscreen = placement === "fullscreen";
-  const effective = canFullscreen && !expanded ? "fill" : placement;
+  const restoredFromFullscreen = canFullscreen && !expanded;
+  const effective = restoredFromFullscreen ? "center" : placement;
 
   const filled = effective === "fill";
   const isFullscreen = effective === "fullscreen";
   const movable = !filled && !isFullscreen;
-  const shellWidth = filled || isFullscreen ? undefined : width;
+  const shellWidth = filled || isFullscreen
+    ? undefined
+    : restoredFromFullscreen ? RESTORED_WIDTH : width;
   const shellHeight = filled
     ? `calc(100vh - ${topInset + BOTTOM_BAR_SAFE_AREA}px)`
     : isFullscreen
       ? "100vh"
-      : height;
+      : restoredFromFullscreen ? RESTORED_HEIGHT : height;
   // Must be called before the early return below. This component renders as
   // null while its window is closed, so a hook placed after that point would
   // change the hook count between renders and take down the whole desktop.
-  const offsets = useCenterOffsets(shellRef, shellWidth, shellHeight);
+  // Use the rendered box, not the requested dimensions. On a small browser a
+  // 520px window may be clamped to 100vw; centring against 520px leaves the
+  // real window partly off-screen and makes the first drag jump.
+  const offsets = useCenterOffsets(shellRef, undefined, undefined);
 
   const minimized = wm.isMinimized(id);
   const isOpen = wm.isOpen(id) && !minimized;
@@ -137,20 +169,28 @@ export function DevWindow({
 
   useEffect(() => {
     if (!isOpen || !movable) return;
-    const measure = () => setBounds(desktopDragBounds(shellRef.current));
-    measure();
-    const observer = new ResizeObserver(measure);
+    refreshBounds();
+    const observer = new ResizeObserver(refreshBounds);
     if (shellRef.current) observer.observe(shellRef.current);
     const topBar = document.querySelector<HTMLElement>(".persona-topbar");
     if (topBar) observer.observe(topBar);
     const taskbar = document.querySelector<HTMLElement>("[data-dev-taskbar]");
     if (taskbar) observer.observe(taskbar);
-    window.addEventListener("resize", measure);
+    window.addEventListener("resize", refreshBounds);
     return () => {
       observer.disconnect();
-      window.removeEventListener("resize", measure);
+      window.removeEventListener("resize", refreshBounds);
     };
-  }, [isOpen, movable]);
+  }, [isOpen, movable, refreshBounds]);
+
+  useLayoutEffect(() => {
+    if (!movable) {
+      x.set(0);
+      y.set(0);
+    } else if (isOpen) {
+      refreshBounds();
+    }
+  }, [isOpen, movable, offsets.marginLeft, offsets.marginTop, refreshBounds, x, y]);
 
   // Declared before the early return for the same reason the hooks are: the
   // Escape listener below closes over it.
@@ -196,9 +236,8 @@ export function DevWindow({
    * Covering it was never an option: it is fixed at `z-[200]`, above every
    * window shell, so a "fullscreen" window had the desktop's own bar sitting on
    * top of it. It is asked to stand down instead. Tied to `isFullscreen` rather
-   * than to `canFullscreen`, so hitting restore drops the window to `fill` and
-   * brings the bar straight back — that placement deliberately stops short of
-   * it and expects it to be there.
+   * than to `canFullscreen`, so hitting restore brings the bar straight back
+   * and restores a draggable window.
    */
   const { setChromeHidden } = wm;
   useEffect(() => {
@@ -219,7 +258,7 @@ export function DevWindow({
       dragMomentum={false}
       dragElastic={0}
       dragConstraints={bounds}
-      onDragStart={() => setBounds(desktopDragBounds(shellRef.current))}
+      onDragStart={refreshBounds}
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{
         opacity: closing ? 0 : 1,
@@ -229,6 +268,8 @@ export function DevWindow({
       onMouseDown={() => wm.focusWindow(id)}
       aria-hidden={parked || undefined}
       style={{
+        x,
+        y,
         /*
           `fixed` for a window that asked to sit over the top bar, and the
           reason is a clip rather than a stacking order.
@@ -261,7 +302,7 @@ export function DevWindow({
         zIndex: wm.zIndexOf(id),
         width: shellWidth,
         ...(shellHeight !== undefined ? { height: shellHeight } : undefined),
-        maxWidth: "100vw",
+        maxWidth: `calc(100vw - ${WINDOW_EDGE_INSET * 2}px)`,
         maxHeight: `calc(100vh - ${BOTTOM_BAR_SAFE_AREA}px)`,
         // Vertically centred always. Horizontally centred unless the window
         // asked to sit on the right. `useCenterOffsets` measures the element
@@ -269,10 +310,10 @@ export function DevWindow({
         // from hanging off the bottom of the screen.
         top: "50%",
         marginTop: offsets.marginTop,
-        ...(placement === "right"
-          ? { right: "4%", left: "auto", marginLeft: 0 }
-          : placement === "left"
-            ? { left: "4%", right: "auto", marginLeft: 0 }
+        ...(effective === "right"
+          ? { right: WINDOW_EDGE_INSET, left: "auto", marginLeft: 0 }
+          : effective === "left"
+            ? { left: WINDOW_EDGE_INSET, right: "auto", marginLeft: 0 }
             : { left: "50%", marginLeft: offsets.marginLeft }),
         // Spread last so a filled window overrides the centring above
         // outright rather than fighting it.
@@ -309,13 +350,13 @@ export function DevWindow({
             }
           : {}),
       }}
-      className="win98-border bg-persona-surface flex flex-col"
+      className="dev-window win98-border bg-persona-surface flex flex-col"
     >
       <div
         className="bg-persona-titlebar text-white flex cursor-grab active:cursor-grabbing touch-none items-center justify-between px-2 py-2 select-none"
         onPointerDown={(event) => {
           if (!movable) return;
-          setBounds(desktopDragBounds(shellRef.current));
+          refreshBounds();
           dragControls.start(event);
         }}
       >

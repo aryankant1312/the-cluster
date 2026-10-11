@@ -1,9 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import localFont from "next/font/local";
 import { useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FlowingMenu, type FlowingMenuItem } from "./FlowingMenu";
+import styles from "./ServicesWindow.module.css";
+
+const lemonMilk = localFont({
+  src: [
+    { path: "../../../assets/fonts/lemon-milk-regular.otf", weight: "400", style: "normal" },
+    { path: "../../../assets/fonts/lemon-milk-bold.otf", weight: "700", style: "normal" },
+  ],
+  variable: "--font-services-lemon-milk",
+  display: "swap",
+});
 
 type ServiceId =
   | "music-production"
@@ -11,7 +22,6 @@ type ServiceId =
   | "composition"
   | "music-video-direction"
   | "creative-direction"
-  | "visual-concepts"
   | "artist-development";
 
 interface Service extends FlowingMenuItem {
@@ -47,7 +57,7 @@ const SERVICES: readonly Service[] = [
     id: "composition",
     number: "03",
     text: "Composition",
-    tags: ["Original Music", "Hooks", "Jingles", "Brand Audio", "Custom Tracks"],
+    tags: ["Song Writing/Composing", "Hooks", "Jingles", "Brand Audio", "Custom Tracks"],
     copy: "Custom compositions developed around a brief, emotion, campaign or visual identity.",
     deliverables: ["Creative direction", "Original composition", "Alternate cuts", "Usage-ready exports"],
     image: "/images/covers/finding-peace.jpg",
@@ -74,18 +84,8 @@ const SERVICES: readonly Service[] = [
     accent: "One world. Every touchpoint.",
   },
   {
-    id: "visual-concepts",
-    number: "06",
-    text: "Visual Concepts",
-    tags: ["Cover Art", "Reels", "Teasers", "Performance Visuals"],
-    copy: "Visual ideas designed to make a track or campaign instantly recognizable across platforms.",
-    deliverables: ["Key visual", "Cover direction", "Short-form concepts", "Performance visual language"],
-    image: "/images/track-cards/gaddi-rok.jpg",
-    accent: "Recognition before explanation.",
-  },
-  {
     id: "artist-development",
-    number: "07",
+    number: "06",
     text: "Artist Development",
     tags: ["Sound", "Positioning", "Project Direction", "World Building"],
     copy: "Helping emerging artists define what they sound like, what they represent and how those ideas translate into releases.",
@@ -107,7 +107,7 @@ const SERVICE_OPTIONS = [
 
 const BUDGETS = ["Under ₹50k", "₹50k – ₹1L", "₹1L – ₹3L", "₹3L – ₹10L", "₹10L+", "Prefer to discuss"];
 
-export function ServicesWindow() {
+export function ServicesWindow({ persona }: { persona: "dev" | "dotm" }) {
   const scrollRef = useRef<HTMLElement>(null);
   const [activeId, setActiveId] = useState<ServiceId | null>(null);
   const active = useMemo(() => SERVICES.find((service) => service.id === activeId) ?? null, [activeId]);
@@ -125,7 +125,7 @@ export function ServicesWindow() {
   };
 
   return (
-    <main ref={scrollRef} className="h-full w-full max-w-full overflow-x-hidden overflow-y-auto bg-[#D22B2B] text-black selection:bg-black selection:text-[#D22B2B]">
+    <main ref={scrollRef} data-services-persona={persona} className={`${styles.root} ${lemonMilk.variable} h-full w-full max-w-full overflow-x-hidden overflow-y-auto bg-[#D22B2B] text-black selection:bg-black selection:text-[#D22B2B]`}>
       <AnimatePresence mode="wait" initial={false}>
         {active ? (
           <ServiceDetail key={active.id} service={active} onBack={() => navigate(null)} onStart={startProject} />
@@ -145,40 +145,43 @@ function ServicesLanding({ onSelect }: { onSelect: (id: string) => void }) {
       <style jsx global>{`
         @keyframes services-marquee { to { transform: translateX(-33.333%); } }
         .services-display { font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; font-weight: 900; }
+        .services-section-title {
+          font-size: clamp(1.75rem, 7.7vw, 7.5rem);
+          line-height: 0.82;
+          letter-spacing: -0.065em;
+        }
       `}</style>
       <section className="relative flex h-full min-h-[30rem] flex-col overflow-hidden border-b-4 border-black px-5 py-5 md:px-10 md:py-7">
         <header className="relative z-10 flex shrink-0 items-center justify-between font-mono text-[9px] uppercase tracking-[0.16em] md:text-xs">
-          <span>DOTM DAILY®</span>
+          <span className={styles.cornerText}>DOTM DAILY®</span>
           <nav className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black p-1 text-white shadow-[0_6px_18px_rgba(0,0,0,0.2)]" aria-label="Services sections">
             <a href="#service-list" className="rounded-full px-3 py-2 transition hover:bg-white hover:text-black md:px-5">Services</a>
             <a href="#process" className="rounded-full px-3 py-2 transition hover:bg-white hover:text-black md:px-5">Process</a>
             <a href="#inquiry" className="rounded-full px-3 py-2 transition hover:bg-white hover:text-black md:px-5">Contact</a>
           </nav>
-          <span className="hidden md:block">Independent / Creative</span>
+          <span className={`${styles.cornerText} hidden md:block`}>Independent / Creative</span>
         </header>
 
         <div className="relative flex min-h-0 flex-1 items-center justify-center py-2 md:py-4">
           <Image
-            src="/images/dotm/dotm-daily-logo.png"
+            src="/images/dotm/dotm-daily-logo-hq.png"
             alt="DOTM DAILY"
-            width={900}
-            height={900}
+            width={1254}
+            height={1254}
+            unoptimized
             priority
             className="pointer-events-none h-full max-h-[52rem] w-[min(92vw,52rem)] scale-[1.08] select-none object-contain md:scale-[1.15]"
             draggable={false}
-            style={{
-              filter: "brightness(0) contrast(1.3)",
-            }}
           />
         </div>
 
         <div className="relative z-10 grid shrink-0 items-end gap-5 md:grid-cols-[1fr_auto_1fr]">
-          <div className="font-mono text-[10px] uppercase leading-5 tracking-[0.12em]">
+          <div className={`${styles.cornerText} font-mono text-[10px] uppercase leading-5 tracking-[0.12em]`}>
             <p>Music / Visuals / Direction / Development</p>
             <p>Based in New Delhi</p>
           </div>
           <RotatingExplore />
-          <span className="hidden justify-self-end font-mono text-[10px] uppercase tracking-[0.12em] md:block">Scroll to explore</span>
+          <span className={`${styles.cornerText} hidden justify-self-end font-mono text-[10px] uppercase tracking-[0.12em] md:block`}>Scroll to explore</span>
         </div>
       </section>
 
@@ -189,14 +192,14 @@ function ServicesLanding({ onSelect }: { onSelect: (id: string) => void }) {
 
       <section id="service-list" className="scroll-mt-2 border-b-4 border-black bg-black">
         <div className="flex items-end justify-between px-5 py-8 text-white md:px-12 md:py-12">
-          <h1 className="services-display text-[13vw] leading-[0.76] tracking-[-0.075em] md:text-[9vw]">SERVICES</h1>
+          <h1 className="services-display services-section-title">SERVICES</h1>
           <span className="hidden pb-1 font-mono text-xs uppercase tracking-[0.18em] md:block">Hover / Select / Build</span>
         </div>
         <FlowingMenu items={SERVICES} onSelect={onSelect} />
       </section>
 
       <section id="process" className="scroll-mt-2 bg-white px-5 py-16 md:px-12 md:py-24">
-        <h2 className="services-display text-[13vw] uppercase leading-[0.8] tracking-[-0.065em] md:text-[7vw]">How we<br />build.</h2>
+        <h2 className="services-display services-section-title whitespace-nowrap uppercase">How we build.</h2>
         <div className="mt-12 grid md:grid-cols-4">
           {[
             ["01 / BRIEF", "Tell us what you're building."],
@@ -219,12 +222,12 @@ function ServicesLanding({ onSelect }: { onSelect: (id: string) => void }) {
 
 function ServiceDetail({ service, onBack, onStart }: { service: Service; onBack: () => void; onStart: () => void }) {
   return (
-    <motion.article initial={{ opacity: 0, x: 35 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -35 }} transition={{ duration: 0.28 }}>
+    <motion.article className={styles.detail} initial={{ opacity: 0, x: 35 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -35 }} transition={{ duration: 0.28 }}>
       <header className="sticky top-0 z-30 flex items-center justify-between border-b-2 border-black bg-[#D22B2B] px-4 py-3 font-mono text-[10px] uppercase tracking-[0.16em] md:px-8">
         <button type="button" onClick={onBack} className="border border-black bg-black px-4 py-2 text-white transition hover:bg-white hover:text-black">← Back to Services</button>
-        <span>{service.number} / 07</span>
+        <span>{service.number} / {String(SERVICES.length).padStart(2, "0")}</span>
       </header>
-      <section className="grid min-h-[75vh] border-b-4 border-black lg:grid-cols-[1.25fr_0.75fr]">
+      <section className={`${styles.detailHero} grid min-h-[75vh] border-b-4 border-black lg:grid-cols-[1.25fr_0.75fr]`}>
         <div className="flex flex-col justify-between p-5 md:p-10">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.2em]">DOTM DAILY / Service {service.number}</p>
@@ -236,7 +239,7 @@ function ServiceDetail({ service, onBack, onStart }: { service: Service; onBack:
         <div className="relative min-h-[24rem] overflow-hidden border-t-4 border-black lg:min-h-0 lg:border-t-0 lg:border-l-4">
           <div className="absolute inset-0 scale-105 bg-cover bg-center grayscale" style={{ backgroundImage: `url(${service.image})` }} />
           <div className="absolute inset-0 bg-[#D22B2B]/20 mix-blend-multiply" />
-          <p className="absolute inset-x-5 bottom-5 text-5xl font-black uppercase leading-[0.85] tracking-[-0.07em] text-white mix-blend-difference md:text-7xl">{service.accent}</p>
+          <p className={`${styles.imageAccent} absolute inset-x-5 bottom-5 text-5xl font-black uppercase leading-[0.85] tracking-[-0.07em] text-white mix-blend-difference md:text-7xl`}>{service.accent}</p>
         </div>
       </section>
       <section className="grid bg-black text-white md:grid-cols-[0.75fr_1.25fr]">
@@ -299,7 +302,7 @@ function InquirySection() {
 
   return (
     <section id="inquiry" className="scroll-mt-2 bg-[#D22B2B] px-5 py-16 md:px-12 md:py-24">
-      <h2 className="services-display text-[13vw] uppercase leading-[0.8] tracking-[-0.065em] md:text-[7vw]">Have a project?<br />Let&apos;s build it.</h2>
+      <h2 className="services-display services-section-title uppercase">Have a project?<br />Let&apos;s build it.</h2>
       {status === "sent" ? (
         <div className="mt-12 border-4 border-black bg-black p-8 text-white md:p-12" role="status">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#D22B2B]">Request received</p>
@@ -355,7 +358,7 @@ function ServiceField({ label, wide, children }: { label: string; wide?: boolean
 }
 
 function MarqueeLine({ children, reverse = false, className = "" }: { children: string; reverse?: boolean; className?: string }) {
-  return <div className={`flex w-max whitespace-nowrap text-3xl font-black uppercase tracking-[-0.035em] md:text-6xl ${className}`} style={{ animation: `services-marquee ${reverse ? 28 : 22}s linear infinite ${reverse ? "reverse" : "normal"}` }}>{children}&nbsp;{children}&nbsp;{children}</div>;
+  return <div className={`${styles.conveyorText} flex w-max whitespace-nowrap text-3xl font-black uppercase tracking-[-0.035em] md:text-6xl ${className}`} style={{ animation: `services-marquee ${reverse ? 28 : 22}s linear infinite ${reverse ? "reverse" : "normal"}` }}>{children}&nbsp;{children}&nbsp;{children}</div>;
 }
 
 function RotatingExplore() {

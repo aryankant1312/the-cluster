@@ -1,5 +1,7 @@
 "use client";
 
+import { SiteVideo } from "./SiteVideo";
+
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -560,7 +562,7 @@ function CampaignVideo({ asset }: { asset: BrandMediaAsset }) {
 
   return (
     <>
-      <video
+      <SiteVideo
         ref={videoRef}
         autoPlay
         loop
@@ -571,7 +573,7 @@ function CampaignVideo({ asset }: { asset: BrandMediaAsset }) {
         aria-label={asset.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")}
       >
         <source src={asset.src} />
-      </video>
+      </SiteVideo>
       <div className="absolute bottom-2 right-2 z-30 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-2.5 py-1.5 opacity-80 backdrop-blur-md transition-opacity hover:opacity-100 focus-within:opacity-100">
         <button
           type="button"

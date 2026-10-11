@@ -54,29 +54,40 @@ export function DotmVaultWindow() {
             The Vault
           </p>
 
-          <input
-            ref={inputRef}
-            type="password"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={4}
-            style={{
-              color: "#ffffff",
-              WebkitTextFillColor: "#ffffff",
-              caretColor: "#ffffff",
-              textShadow: "0 0 0 #ffffff",
-              opacity: 1,
-            }}
-            value={code}
-            onChange={(e) => {
-              setCode(e.target.value.replace(/\D/g, "").slice(0, 4));
-              if (denied) setDenied(false);
-            }}
-            placeholder="4-digit code"
-            className={`dotm-dark-field h-12 w-full border bg-[#0b0b0b] px-3 text-center font-chrome text-lg tracking-[0.3em] text-white outline-none ${
-              denied ? "border-[#ff0033]" : "border-white/25 focus:border-[#ff0033]"
-            }`}
-          />
+          <div className="relative w-full">
+            <input
+              ref={inputRef}
+              type="password"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={4}
+              style={{
+                color: "transparent",
+                WebkitTextFillColor: "transparent",
+                caretColor: "#ffffff",
+                textShadow: "none",
+                opacity: 1,
+              }}
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 4));
+                if (denied) setDenied(false);
+              }}
+              placeholder="4-digit code"
+              aria-label="4-digit vault code"
+              className={`dotm-dark-field h-12 w-full border bg-[#0b0b0b] px-3 text-center font-chrome text-lg tracking-[0.3em] outline-none ${
+                denied ? "border-[#ff0033]" : "border-white/25 focus:border-[#ff0033]"
+              }`}
+            />
+            {code.length > 0 && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 flex items-center justify-center pl-[0.3em] font-sans text-xl tracking-[0.3em] text-white"
+              >
+                {"•".repeat(code.length)}
+              </span>
+            )}
+          </div>
 
           {denied && (
             <p className="font-chrome text-xs tracking-[0.35em] text-[#ff0033]">

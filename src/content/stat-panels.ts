@@ -14,8 +14,8 @@
  *              (YouTube, Spotify catalogue) or by reading a public page
  *              (Instagram followers, Spotify followers). The site
  *              itself calls nothing; it reads what that job stored.
- *   "manual" — reachable by neither. YouTube Studio's unique viewers,
- *              Instagram's insights and Spotify-for-Artists' playlist adds
+ *   "manual" — reachable by neither. Spotify-for-Artists' streams,
+ *              Instagram's insights and other dashboard-only insights
  *              exist only behind a dashboard login and appear on no public
  *              page, so a person enters them in /admin.
  *
@@ -100,7 +100,7 @@ export interface StatPanel {
   action?: PanelAction;
 }
 
-/** The window Instagram and Spotify both report their rolling figures over. */
+/** The rolling reporting window used by all three platform panels. */
 const ROLLING_WINDOW = "Last 28 days";
 
 export const statPanels: StatPanel[] = [
@@ -112,6 +112,7 @@ export const statPanels: StatPanel[] = [
     blurb: "Where the music becomes a visual experience",
     milestone: 25_000,
     milestoneKey: "youtube_subscribers",
+    period: ROLLING_WINDOW,
     metrics: [
       {
         id: "yt-subscribers",
@@ -123,12 +124,11 @@ export const statPanels: StatPanel[] = [
         source: "api",
       },
       {
-        id: "yt-unique",
-        key: "youtube_unique_viewers_28d",
-        label: "Unique viewers",
-        description:
-          "People, not plays, in the last 28 days. Someone who watched six times counts once.",
-        source: "manual",
+        id: "yt-views",
+        key: "youtube_views_28d",
+        label: "Views",
+        description: "Views in the last 28 days, as reported by YouTube Analytics. Recent days may still be processing.",
+        source: "api",
       },
     ],
     action: {
@@ -200,10 +200,10 @@ export const statPanels: StatPanel[] = [
         source: "api",
       },
       {
-        id: "sp-playlist-adds",
-        key: "spotify_playlist_adds_28d",
-        label: "Playlist adds",
-        description: "Times a track was added to someone's own playlist.",
+        id: "sp-streams",
+        key: "spotify_streams_28d",
+        label: "Streams",
+        description: "Streams in the last 28 days.",
         source: "manual",
       },
     ],

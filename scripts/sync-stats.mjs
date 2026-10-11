@@ -1,3 +1,4 @@
+import { collectYouTubeAnalytics } from "./lib/youtube-analytics.mjs";
 /**
  * The only writer of platform figures.
  *
@@ -377,6 +378,7 @@ async function recordSnapshot(source, metric, value) {
 
 const COLLECTORS = [
   ["youtube-api", collectYouTube],
+  ["youtube-analytics", () => collectYouTubeAnalytics(politeFetch)],
   ["spotify-api", collectSpotifyApi],
   ["instagram-scrape", collectInstagram],
   ["spotify-listeners-scrape", collectSpotifyListeners],

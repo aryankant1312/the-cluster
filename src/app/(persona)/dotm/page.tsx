@@ -55,8 +55,8 @@ const ShowsExperience = dynamic(
   () => withWindowLoader(() => import("@/components/dotm/window-content/ShowsExperience")).then((m) => m.ShowsExperience),
   { ssr: false, loading: () => <WindowLoading label="Shows" /> },
 );
-const ShootOnSightWindow = dynamic(
-  () => withWindowLoader(() => import("@/components/shared/ShootOnSightWindow")).then((m) => m.ShootOnSightWindow),
+const ShootAtSiteMaintenance = dynamic(
+  () => withWindowLoader(() => import("@/components/shared/ShootAtSiteMaintenance")).then((m) => m.ShootAtSiteMaintenance),
   { ssr: false, loading: () => <WindowLoading label="Shoot at Site" /> },
 );
 const ClusterWallWindow = dynamic(
@@ -235,7 +235,7 @@ export default function DotmDesktopPage() {
           its own edges and its own scroller, so the shell's padding and sky
           would only be a second frame inside the first. */}
       <DotmWindow id="shoot-on-sight" title="Shoot at Site" placement="fullscreen" fullSurface>
-        <ShootOnSightWindow isDotm />
+        <ShootAtSiteMaintenance isDotm />
       </DotmWindow>
       <DotmWindow id="merch" title="Drops" placement="fullscreen" fullSurface>
         <ComingSoonDrop />
@@ -255,7 +255,7 @@ export default function DotmDesktopPage() {
         <DotmPortfolioWindow />
       </DotmWindow>
       <DotmWindow id="services" title="Services" placement="fullscreen" fullSurface>
-        <ServicesWindow />
+        <ServicesWindow persona="dotm" />
       </DotmWindow>
       {/* The Vault opens filled, like the music player. Behind the code lock
           is a sky you turn your head inside of, and a windowed sky is a

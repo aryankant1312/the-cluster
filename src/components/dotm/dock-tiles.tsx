@@ -259,44 +259,18 @@ export function PortfolioTile() {
   );
 }
 
-/**
- * Shoot on Sight — a viewfinder over a location pin.
- *
- * The crosshair says "sight", the pin says "location", and together they are
- * the name. Same 48-unit plate, same red-to-black ground as Drops below, so
- * the two sit at one weight in the dock rather than one leading the other.
- */
+/** Delivered director animation, with its white card removed into real alpha. */
 export function ShootOnSightTile() {
   return (
-    <svg viewBox="0 0 48 48" className={TILE} aria-hidden="true">
-      <defs>
-        <linearGradient id="sos-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#2a2a2e" />
-          <stop offset="1" stopColor="#08080a" />
-        </linearGradient>
-      </defs>
-      <rect width="48" height="48" rx="12" fill="url(#sos-bg)" />
-      <g
-        stroke="#ffffff"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        opacity="0.92"
-      >
-        {/* Four corners rather than a closed box: a full rectangle reads as a
-            photo frame instead of as something being aimed. */}
-        <path d="M11 17v-4h4M33 13h4v4M37 31v4h-4M15 35h-4v-4" />
-      </g>
-      {/* The pin takes the persona's red — the one saturated mark on the tile,
-          where the eye should land. */}
-      <path
-        d="M24 34c4.6-5.6 6.9-9.5 6.9-12.5a6.9 6.9 0 1 0-13.8 0c0 3 2.3 6.9 6.9 12.5z"
-        fill="#ff2244"
-      />
-      <circle cx="24" cy="21.2" r="2.6" fill="#0a0a0b" />
-      <Gloss />
-    </svg>
+    // Plain img preserves the animation and avoids native video hover controls.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/images/dotm/shoot-at-site-icon.webp"
+      alt=""
+      aria-hidden="true"
+      draggable={false}
+      className="h-full w-full object-contain"
+    />
   );
 }
 

@@ -82,6 +82,9 @@ jobs:
           SPOTIFY_ARTIST_ID: ${{ secrets.SPOTIFY_ARTIST_ID }}
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_CHANNEL_ID: ${{ secrets.YOUTUBE_CHANNEL_ID }}
+          YOUTUBE_ANALYTICS_CLIENT_ID: ${{ secrets.YOUTUBE_ANALYTICS_CLIENT_ID }}
+          YOUTUBE_ANALYTICS_CLIENT_SECRET: ${{ secrets.YOUTUBE_ANALYTICS_CLIENT_SECRET }}
+          YOUTUBE_ANALYTICS_REFRESH_TOKEN: ${{ secrets.YOUTUBE_ANALYTICS_REFRESH_TOKEN }}
           INSTAGRAM_HANDLE: ${{ secrets.INSTAGRAM_HANDLE }}
         run: |
           node scripts/sync-stats.mjs || {

@@ -1,0 +1,156 @@
+.card {
+  --contact-fit: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  container: dotm-contact / size;
+}
+
+.layout {
+  display: grid;
+  width: calc(100% / var(--contact-fit));
+  min-height: calc(100% / var(--contact-fit));
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(0, 1.2fr);
+  transform: scale(var(--contact-fit));
+  transform-origin: top left;
+}
+
+.poster,
+.details {
+  padding: clamp(14px, 2.5cqh, 24px) clamp(16px, 1.8cqw, 28px);
+}
+
+.poster {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.heading {
+  margin-top: clamp(10px, 1.5cqh, 16px);
+  font-size: clamp(36px, 10cqh, 80px);
+}
+
+.rule {
+  margin-top: clamp(10px, 1.5cqh, 16px);
+}
+
+.roles {
+  margin-top: 10px;
+  font-size: clamp(11px, 1.7cqh, 13px);
+  line-height: 1.7;
+  letter-spacing: 0.16em;
+}
+
+.bio {
+  margin-top: clamp(14px, 2cqh, 20px);
+  font-size: clamp(15px, 2.7cqh, 19px);
+  line-height: 1.5;
+}
+
+.details {
+  justify-content: space-between;
+  gap: clamp(12px, 2cqh, 20px);
+}
+
+.details > dl {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.row {
+  flex: 1;
+  padding-block: clamp(12px, 3cqh, 24px);
+}
+
+.row dt,
+.newsletter > label {
+  font-size: clamp(11px, 1.7cqh, 13px);
+}
+
+.contactValue {
+  overflow-wrap: anywhere;
+  font-size: clamp(15px, 2.8cqh, 21px);
+  line-height: 1.45;
+}
+
+.book {
+  padding: clamp(12px, 2.5cqh, 20px) 14px;
+}
+
+.book > span > span:first-child {
+  font-size: clamp(19px, 3cqh, 25px);
+}
+
+.book > span > span:last-child {
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.newsletter {
+  padding: clamp(12px, 2.5cqh, 20px);
+}
+
+.newsletter > p {
+  font-size: clamp(12px, 2cqh, 15px);
+  line-height: 1.5;
+}
+
+.portrait {
+  min-height: 0;
+}
+
+@container dotm-contact (width < 760px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+
+  .portrait {
+    grid-column: 1 / -1;
+    min-height: 160px;
+  }
+
+  .poster,
+  .details {
+    padding: 12px;
+  }
+
+  .heading {
+    font-size: 36px;
+  }
+
+  .bio {
+    font-size: 14px;
+  }
+
+  .contactValue {
+    font-size: 14px;
+  }
+
+  .row {
+    padding-block: 12px;
+  }
+}
+
+@container dotm-contact (width < 480px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .heading > span {
+    display: inline;
+  }
+
+  .heading > span + span::before {
+    content: " ";
+  }
+
+  .bio {
+    line-height: 1.4;
+  }
+
+  .portrait {
+    min-height: 140px;
+  }
+}

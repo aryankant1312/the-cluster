@@ -21,7 +21,9 @@
     "build:wall": "node scripts/build-cluster-wall.mjs",
     "predev": "npm run build:wall",
     "prebuild": "npm run build:wall",
-    "build:platform-icons": "python scripts/build_platform_icons.py"
+    "build:platform-icons": "python scripts/build_platform_icons.py",
+    "authorize:youtube": "node scripts/authorize-youtube-analytics.mjs",
+    "test:newsletter": "node scripts/test-newsletter.cjs"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.22",
@@ -32,6 +34,7 @@
     "motion": "^13.0.0",
     "next": "16.3.0",
     "next-intl": "^4.13.5",
+    "nodemailer": "^10.1.0",
     "ogl": "^1.0.11",
     "pg": "^8.23.0",
     "react": "19.2.8",
@@ -43,6 +46,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.13.3",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",

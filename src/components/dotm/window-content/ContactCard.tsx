@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import styles from "./ContactCard.module.css";
 
 /**
  * DOTM's contact card, as a brutalist type-poster.
@@ -23,7 +24,7 @@ import { cn } from "@/lib/utils";
  */
 
 const BIO =
-  "devilonthemic — DOTM, Devil on the Mic — is a Delhi hip-hop artist, rapper and songwriter who broke wider after MTV Hustle Season 4 in 2024. The debut EP 666 — The Beginning carried “D.O.T.M” and “Thak Thak”; the singles “Bhala Kyun” and “Paranoid” carried the rest.";
+  "July 2023. A breakup left Dev with nothing to lose and everything to say — so he picked up the mic, and the mic split him in two. DEV is the feeling: soft, raw, up all night. DOTM is the voice: loud, fearless, saying what nobody else will. Two sides, one pen, zero industry backing. The songs travelled. The listeners stayed. And a cult grew around them — CLUSTER, the fanbase that moves like a movement. This is where the spectrum begins. On my way to FINDING PEACE.";
 
 const EMAIL = "dotmoriginal@gmail.com";
 const PHONE = "+91 9667374331";
@@ -33,10 +34,43 @@ type SubscribeState = "idle" | "sending" | "done" | "error";
 const EMAIL_PATTERN = /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
 
 export function ContactCard({ onBook }: { onBook?: () => void }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
   const [state, setState] = useState<SubscribeState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Reflow first; scale only if a short viewport still cannot fit the card.
+  // Increasing the layout dimensions before scaling preserves its full width
+  // and retains every word and control instead of clipping the overflow.
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    const layout = layoutRef.current;
+    if (!card || !layout) return;
+    let disposed = false;
+    const fit = () => {
+      if (disposed || !card.clientHeight) return;
+      let scale = 1;
+      card.style.setProperty("--contact-fit", "1");
+      for (let pass = 0; pass < 4; pass += 1) {
+        const renderedHeight = layout.scrollHeight * scale;
+        if (renderedHeight <= card.clientHeight + 1) break;
+        scale *= card.clientHeight / renderedHeight;
+        card.style.setProperty("--contact-fit", String(scale));
+      }
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(card);
+    document.fonts.ready.then(fit);
+    document.fonts.addEventListener("loadingdone", fit);
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      document.fonts.removeEventListener("loadingdone", fit);
+    };
+  }, [message, state, copied]);
 
   const copy = async (value: string, key: string) => {
     try {
@@ -81,23 +115,20 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#0a0a0b] text-white">
+    <div ref={cardRef} className={cn(styles.card, "bg-[#0a0a0b] text-white")}>
       {/* Landscape: the poster, the details and the portrait sit side by
           side. Stacked in one column the card became a scroll — and a
           contact card you have to scroll is a form again, which is the one
           thing the poster treatment exists to avoid. */}
-      {/* The photograph is the widest column now, not the narrowest. It was
-          `1.05 / 1 / 0.7` — a portrait squeezed into the offcut of a layout
-          built around type. The poster column gives up the most, because a
-          headline set in `clamp()` shrinks gracefully and a face does not. */}
-      <div className="grid min-h-full grid-cols-1 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)_minmax(380px,1.4fr)]">
+      {/* Give width back to the biography while retaining the wide portrait. */}
+      <div ref={layoutRef} className={styles.layout}>
         {/* ── Type side ──────────────────────────────────────────────── */}
         {/* No rule against the details column either. The two of them are one
             block of type read left to right, and a hairline between them cut
             it in half — the same argument that already keeps a border off the
             photograph's edge, applied one column earlier. The stacked rule
             below stays: there the columns really are separate rows. */}
-        <div className="min-w-0 border-b border-white/10 p-7 md:border-b-0 md:p-8">
+        <div className={cn(styles.poster, "min-w-0 border-b border-white/10 md:border-b-0")}>
           <p className="font-mono text-[10px] uppercase tracking-[0.42em] text-[#ff2244]">
             Contact
           </p>
@@ -121,7 +152,7 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
           */}
           <h2
             aria-label="Devil On The Mic"
-            className="mt-5 font-sans text-[clamp(2rem,4vw,3.6rem)] font-black uppercase leading-[0.84] tracking-[-0.03em]"
+            className={cn(styles.heading, "font-sans font-black uppercase leading-[0.84] tracking-[-0.03em]")}
           >
             {[
               ["D", "EVIL"],
@@ -136,14 +167,14 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
             ))}
           </h2>
 
-          <div aria-hidden="true" className="mt-5 h-[3px] w-full bg-[#ff2244]" />
+          <div aria-hidden="true" className={cn(styles.rule, "h-[3px] w-full bg-[#ff2244]")} />
 
-          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-white/55">
-            Rapper · Producer · Composer · Delhi, IN
+          <p className={cn(styles.roles, "font-mono text-[11px] uppercase tracking-[0.24em] text-white/55")}>
+            Director · Rapper · Producer · Composer · Delhi, IN
           </p>
 
           {/* Reading surface. See `.long-text` in globals.css. */}
-          <p className="long-text mt-6 max-w-prose font-body text-[15px] leading-relaxed text-white/70">
+          <p className={cn(styles.bio, "long-text max-w-prose font-body text-white/70")}>
             {BIO}
           </p>
         </div>
@@ -155,7 +186,7 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
             stacked-layout rule below it stays — there the photograph sits
             underneath rather than alongside, so there is no gradient for a
             border to contradict. */}
-        <div className="flex min-w-0 flex-col justify-center border-b border-white/10 p-7 md:border-b-0 md:p-8">
+        <div className={cn(styles.details, "flex min-w-0 flex-col border-b border-white/10 md:border-b-0")}>
           <dl className="divide-y divide-white/10 border-y border-white/10">
             <Row
               label="Mail"
@@ -187,7 +218,7 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
             <button
               type="button"
               onClick={onBook}
-              className="group mt-5 flex w-full items-center justify-between border-2 border-[#ff2244] bg-[#ff2244] px-5 py-3 text-left transition-colors hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b]"
+              className={cn(styles.book, "group flex w-full items-center justify-between border-2 border-[#ff2244] bg-[#ff2244] text-left transition-colors hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b]")}
             >
               <span className="min-w-0">
                 <span className="block font-sans text-lg font-black uppercase tracking-[0.14em] text-white">
@@ -207,7 +238,7 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
           )}
 
           {/* ── Newsletter ─────────────────────────────────────────── */}
-          <div className="mt-5 border border-white/15 p-4">
+          <div className={cn(styles.newsletter, "border border-white/15")}>
             <label
               htmlFor="dotm-newsletter"
               className="block font-mono text-[10px] uppercase tracking-[0.28em] text-white/55"
@@ -217,7 +248,7 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
             <p className="mt-1.5 font-body text-xs text-white/60">
               Drops, show dates and the occasional easter egg. No noise.
             </p>
-            <div className="mt-2.5 flex flex-col gap-2 sm:flex-row">
+            <div className="mt-2.5 flex gap-2">
               <input
                 id="dotm-newsletter"
                 type="email"
@@ -272,12 +303,12 @@ export function ContactCard({ onBook }: { onBook?: () => void }) {
             beside the details, and from the TOP on a narrow one, where it sits
             under them — a left-edge fade on a stacked column would feather the
             wrong side entirely. */}
-        <aside className="relative min-h-[280px] overflow-hidden bg-[#0a0a0b]">
+        <aside className={cn(styles.portrait, "relative overflow-hidden bg-[#0a0a0b]")}>
           <Image
             src="/images/dotm/contact-photo.jpg"
             alt="DOTM with a rotary telephone"
             fill
-            sizes="(min-width: 768px) 46vw, 100vw"
+            sizes="(min-width: 768px) 42vw, 100vw"
             className="object-cover object-center"
           />
 
@@ -331,7 +362,7 @@ function Row({
   copied: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2.5">
+    <div className={cn(styles.row, "flex items-center justify-between gap-2")}>
       <div className="min-w-0">
         <dt className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/40">
           {label}
@@ -340,7 +371,7 @@ function Row({
           <a
             href={href}
             {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className="block truncate font-mono text-[15px] text-white underline decoration-[#ff2244] decoration-2 underline-offset-4 hover:text-[#ff2244]"
+            className={cn(styles.contactValue, "block font-mono text-white underline decoration-[#ff2244] decoration-2 underline-offset-4 hover:text-[#ff2244]")}
           >
             {value}
           </a>

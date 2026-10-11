@@ -6,7 +6,6 @@ export interface DevWindowMeta {
 }
 
 export const DEV_WINDOWS: DevWindowMeta[] = [
-  { id: "welcome", title: "Welcome", glyph: "★", label: "Welcome" },
   { id: "my-music", title: "My Music", glyph: "♫", label: "My Music" },
   { id: "folder-therapy-session", title: "Therapy Session, Pt. 1", glyph: "▤", label: "Therapy Session, Pt. 1" },
   { id: "folder-666-the-beginning", title: "666 - The Beginning", glyph: "▤", label: "666 - The Beginning" },

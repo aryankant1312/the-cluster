@@ -43,6 +43,7 @@ const FAMILIES = [
   { family: "Cormorant Garamond", weights: [400, 500, 600, 700] },
   { family: "Cinzel", weights: [400, 500, 600] },
   { family: "Anton", weights: [400] },
+  { family: "Playfair Display", weights: [400, 700], italic: true },
 ];
 
 /** `Cormorant Garamond` → `cormorant-garamond`, which is the filename stem. */
@@ -60,11 +61,12 @@ function coversBasicLatin(unicodeRange) {
   return /U\+0000-00FF|U\+0-FF/i.test(unicodeRange);
 }
 
-async function fetchCss(family, weights) {
+async function fetchCss(family, weights, italic = false) {
   const url =
     "https://fonts.googleapis.com/css2?family=" +
     encodeURIComponent(family).replace(/%20/g, "+") +
-    `:wght@${weights.join(";")}&display=swap`;
+    (italic ? `:ital,wght@${weights.map((weight) => `1,${weight}`).join(";")}` : `:wght@${weights.join(";")}`) +
+    "&display=swap";
 
   const res = await fetch(url, { headers: { "User-Agent": UA } });
   if (!res.ok) throw new Error(`${family}: CSS request failed (${res.status})`);
@@ -89,15 +91,20 @@ async function main() {
   await mkdir(OUT, { recursive: true });
   const written = [];
 
-  for (const { family, weights } of FAMILIES) {
-    const faces = parseFaces(await fetchCss(family, weights));
+  const requested = process.argv.slice(2);
+  const selected = requested.length ? FAMILIES.filter(({ family }) => requested.includes(family)) : FAMILIES;
+  if (requested.some((name) => !FAMILIES.some(({ family }) => family === name))) {
+    throw new Error("Unknown font family requested");
+  }
+  for (const { family, weights, italic = false } of selected) {
+    const faces = parseFaces(await fetchCss(family, weights, italic));
     if (faces.length === 0) throw new Error(`${family}: no latin face in the stylesheet`);
 
     for (const { weight, src } of faces) {
       const res = await fetch(src, { headers: { "User-Agent": UA } });
       if (!res.ok) throw new Error(`${family} ${weight}: download failed (${res.status})`);
 
-      const name = `${slug(family)}-${weight}.woff2`;
+      const name = `${slug(family)}-${weight}${italic ? "-italic" : ""}.woff2`;
       const bytes = Buffer.from(await res.arrayBuffer());
       await writeFile(join(OUT, name), bytes);
       written.push(`${name} (${(bytes.length / 1024).toFixed(1)}KB)`);

@@ -28,8 +28,8 @@ interface Shortcut {
 const SHORTCUTS: readonly Shortcut[] = [
   { id: "services", label: "Services", icon: <ServicesTile />, position: "left-[8%] top-[18%]", rotate: "-rotate-2", bare: true },
   { id: "merch", label: "Drops", icon: <DropsTile />, position: "right-[7%] top-[22%]", rotate: "rotate-2" },
-  { id: "shoot-on-sight", label: "Shoot at Site", icon: <ShootOnSightTile />, position: "right-[17%] top-[49%]", rotate: "-rotate-1" },
-  { id: "portfolio", label: "Portfolio", icon: <PortfolioTile />, position: "left-[9%] top-[58%]", rotate: "rotate-1" },
+  { id: "shoot-on-sight", label: "Shoot at Site", icon: <ShootOnSightTile />, position: "right-[7%] top-[calc(22%+100px)]", rotate: "-rotate-1", bare: true },
+  { id: "portfolio", label: "Portfolio", icon: <PortfolioTile />, position: "left-[9%] top-[58%]", rotate: "rotate-1", bare: true },
   { id: "notes", label: "Notes", icon: <NotesTile />, position: "right-[31%] top-[67%]", rotate: "-rotate-2" },
 ] as const;
 

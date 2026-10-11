@@ -1,0 +1,122 @@
+.votePane {
+  position: relative;
+  min-width: 0;
+  min-height: 440px;
+  container: city-votes / size;
+}
+
+.voteBoard {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto clamp(108px, 34cqh, 210px) minmax(0, 1fr);
+  gap: clamp(6px, 2cqh, 14px);
+  padding: 4px 4px 6px;
+  overflow: hidden;
+}
+
+.voteHeading {
+  min-width: 0;
+}
+
+.podium {
+  display: flex;
+  min-height: 0;
+  gap: clamp(6px, 2cqw, 16px);
+}
+
+.podiumCard {
+  height: 100%;
+  min-height: 0;
+  gap: clamp(3px, 1cqh, 8px);
+  padding: clamp(6px, 1.5cqh, 12px) 8px 0;
+}
+
+.medal {
+  width: clamp(22px, 5cqh, 28px);
+  height: clamp(22px, 5cqh, 28px);
+}
+
+.cityRows {
+  display: grid;
+  grid-template-rows: repeat(var(--city-row-count), minmax(0, 1fr));
+  min-height: 0;
+  gap: clamp(4px, 1.5cqh, 8px);
+}
+
+.cityRow {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  padding: 0 clamp(6px, 2cqw, 12px);
+}
+
+.rowBody {
+  width: 100%;
+  min-width: 0;
+  gap: 6px;
+}
+
+.rowCity,
+.rowActions {
+  gap: clamp(4px, 1.5cqw, 10px);
+}
+
+.cityName {
+  font-size: clamp(12px, 3cqh, 16px);
+  line-height: 1.2;
+}
+
+/* The shorter restored desktop window gets three rows rather than five.
+   CSS grid keeps the vote-ranked order, reading left to right, top to bottom. */
+@container city-votes (height < 380px) and (width > 420px) {
+  .cityRows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--compact-row-count), minmax(0, 1fr));
+  }
+
+  .cityName {
+    font-size: 12px;
+  }
+
+  .rowActions > span:last-child {
+    padding: 3px 5px;
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}
+
+@container city-votes (height < 300px) {
+  .voteBoard {
+    grid-template-rows: auto 80px minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .voteHeading p {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+  }
+
+  .podiumCard {
+    gap: 2px;
+    padding-top: 4px;
+  }
+
+  .podiumCard > span {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .rowActions > span:last-child {
+    padding: 2px 5px;
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .votePane {
+    min-height: 0;
+  }
+}

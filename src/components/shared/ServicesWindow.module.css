@@ -1,0 +1,47 @@
+.root {
+  --services-label-font: var(--font-services-lemon-milk), Arial, sans-serif;
+}
+
+/* Only the four requested landing corner labels change in both personas. */
+.cornerText {
+  font-family: var(--services-label-font);
+}
+
+.root[data-services-persona="dev"] .conveyorText {
+  font-family: var(--services-label-font);
+  font-weight: 700;
+}
+
+/* Scoped to service details, so DOTM and the rest of the landing stay intact. */
+.root[data-services-persona="dev"] .detail,
+.root[data-services-persona="dev"] .detail :where(h1, h2, p, span, button, strong) {
+  font-family: var(--services-label-font);
+}
+
+.root[data-services-persona="dev"] .detail :global(.font-black) {
+  font-weight: 700;
+}
+
+/* Fit the wider lettering inside DEV's service columns and image captions. */
+.root[data-services-persona="dev"] {
+  container-type: inline-size;
+}
+
+.root[data-services-persona="dev"] .detailHero > div {
+  min-width: 0;
+}
+
+.root[data-services-persona="dev"] .detailHero h1 {
+  font-size: clamp(2rem, 7cqw, 7rem);
+}
+
+.root[data-services-persona="dev"] .imageAccent {
+  font-size: clamp(2rem, 4cqw, 3.5rem);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1024px) {
+  .root[data-services-persona="dev"] .detailHero {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  }
+}

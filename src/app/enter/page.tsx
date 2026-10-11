@@ -1,5 +1,7 @@
 "use client";
 
+import { SiteVideo } from "@/components/shared/SiteVideo";
+
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
@@ -138,7 +140,7 @@ export default function EnterPage() {
     >
       {/* `muted` is not a style choice — an unmuted autoplay is refused by
           every browser, and this file carries no audio track anyway. */}
-      <video
+      <SiteVideo
         ref={videoRef}
         src="/videos/intro.mp4"
         poster="/videos/intro-poster.jpg"

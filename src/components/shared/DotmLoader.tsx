@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { WINDOW_LOADER_MINIMUM_MS } from "@/lib/window-loader";
+import { SiteVideo } from "./SiteVideo";
 
 /**
  * THE SHARED WINDOW LOADER — the black ball bouncing over the M while the
@@ -14,7 +15,7 @@ import { WINDOW_LOADER_MINIMUM_MS } from "@/lib/window-loader";
 export function LoaderVideo({ label = "Loading" }: { label?: string }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6">
-      <video
+      <SiteVideo
         autoPlay
         loop
         muted

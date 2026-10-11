@@ -1,5 +1,7 @@
 "use client";
 
+import { SiteVideo } from "@/components/shared/SiteVideo";
+
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -129,7 +131,7 @@ export default function ChooseFacePage() {
       {/* Video, full-frame cutouts and hit testing share the same cover crop.
           Preserve the original PNG canvas: trimming or narrowing its alpha
           moves the highlight away from the person. */}
-      <video
+      <SiteVideo
         src="/videos/choose-face-final.mp4"
         poster="/images/choose-face-final-poster.jpg"
         autoPlay

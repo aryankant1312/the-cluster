@@ -1,5 +1,7 @@
 "use client";
 
+import { SiteVideo } from "./SiteVideo";
+
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import Image from "next/image";
 import {
@@ -783,7 +785,7 @@ function SlideCard({
             showingVideo ? "opacity-0" : "opacity-100",
           )}
         />
-        <video
+        <SiteVideo
           ref={videoRef}
           src={slide.src}
           poster={slide.poster}
@@ -979,13 +981,18 @@ function FullscreenPlayer({
       </div>
 
       <div className="flex min-h-0 flex-1 items-center justify-center px-5">
-        <video
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={playing ? "Pause video" : "Play video"}
+          className="flex h-full min-h-0 max-w-full items-center justify-center focus-visible:outline-2 focus-visible:outline-white"
+        >
+        <SiteVideo
           ref={videoRef}
           src={slide.src}
           poster={slide.poster}
           autoPlay
           playsInline
-          onClick={toggle}
           onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
           onLoadedMetadata={(e) => {
             setDuration(e.currentTarget.duration);
@@ -999,6 +1006,7 @@ function FullscreenPlayer({
           onPause={() => setPlaying(false)}
           className="max-h-full max-w-full cursor-pointer object-contain"
         />
+        </button>
       </div>
 
       <div className="shrink-0 px-5 pb-5 pt-3">

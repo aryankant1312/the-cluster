@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import {
   AnimatePresence,
@@ -15,6 +15,7 @@ import { useCityVotes } from "@/hooks/use-city-votes";
 import { useCountTo } from "@/hooks/use-count-to";
 import { usePersona } from "@/components/providers/PersonaProvider";
 import { cn } from "@/lib/utils";
+import styles from "./ShowsExperience.module.css";
 
 const DotmShowsMap = dynamic(() => import("./DotmShowsMap").then((m) => m.DotmShowsMap), {
   ssr: false,
@@ -466,13 +467,12 @@ function VoteView() {
         that column is exactly the width of a next-city tile opposite. Sized in
         rems, the three would only ever have matched at one viewport width.
 
-        Each half scrolls on its own above `lg`; below it they stack and the
-        outer column scrolls, because two independent scrollers stacked on a
-        phone is two ways to lose your place.
+        The dates may scroll, but the vote board fits its panel's height.
+        Below `lg` the halves stack and only the outer column scrolls.
       */}
-      <div className="relative grid min-h-0 flex-1 gap-5 overflow-y-auto px-1 pb-3 pt-1 lg:grid-cols-2 lg:gap-6 lg:overflow-hidden">
+      <div className="relative grid min-h-0 flex-1 gap-5 overflow-x-hidden overflow-y-auto px-1 pb-3 pt-1 lg:grid-cols-2 lg:gap-6 lg:overflow-hidden">
         {/* ── LEFT: the dates that exist ──────────────────────────────── */}
-        <section className="flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pr-1">
+        <section className="flex min-h-0 flex-col gap-3 lg:overflow-x-hidden lg:overflow-y-auto lg:pr-1">
           <div className="text-center">
             <p className="font-chrome text-[11px] tracking-[0.24em] text-white/55">
               NEXT CITY
@@ -485,8 +485,9 @@ function VoteView() {
         </section>
 
         {/* ── RIGHT: the ranking and the vote ─────────────────────────── */}
-        <section className="flex min-h-0 flex-col gap-7 lg:overflow-y-auto lg:pr-1">
-        <div className="text-center">
+        <section className={styles.votePane} aria-label="City vote rankings">
+        <div className={styles.voteBoard}>
+        <div className={cn(styles.voteHeading, "text-center")}>
           <p className="font-chrome text-[11px] tracking-[0.24em] text-white/55">
             WHERE SHOULD DOTM PLAY NEXT?
           </p>
@@ -496,7 +497,7 @@ function VoteView() {
         </div>
 
         {/* ── The podium ─────────────────────────────────────────────── */}
-        <div className="flex items-end justify-center gap-3 sm:gap-5">
+        <div className={styles.podium}>
           {podiumOrder.map((city, i) => {
             const place = ranked.indexOf(city);
             const votes = counts[city.id] ?? 0;
@@ -527,7 +528,8 @@ function VoteView() {
                   // ever have matched at one viewport size. `min-w-0` because
                   // a flex item refuses to shrink below its content otherwise,
                   // and the city name inside is what would have set that floor.
-                  "group relative flex min-w-0 flex-1 flex-col items-center gap-2 rounded-2xl border p-3 pb-0 text-center outline-none backdrop-blur-md",
+                  styles.podiumCard,
+                  "group relative flex min-w-0 flex-1 flex-col items-center rounded-2xl border text-center outline-none backdrop-blur-md",
                   "transition-[transform,border-color,background-color] duration-300",
                   "focus-visible:ring-2 focus-visible:ring-white/70",
                   voted
@@ -570,7 +572,7 @@ function VoteView() {
                 )}
 
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-chrome text-xs font-bold text-black"
+                  className={cn(styles.medal, "flex shrink-0 items-center justify-center rounded-full font-chrome text-xs font-bold text-black")}
                   style={{
                     background: MEDALS[place] ?? "#c0c6cf",
                     boxShadow: gold
@@ -594,10 +596,9 @@ function VoteView() {
                   )}
                 />
 
-                {/* A fixed track with the bar rising inside it, so the card's
-                    own height never depends on the count. Cards that resized as
-                    the board moved made the whole podium jump on every vote. */}
-                <span className="relative mt-1 flex h-24 w-full items-end overflow-hidden rounded-t-xl sm:h-28">
+                {/* The track uses the space left inside the height-aware card;
+                    live vote counts change the bar, never the card's height. */}
+                <span className="relative flex min-h-0 w-full flex-1 items-end overflow-hidden rounded-t-xl">
                   <motion.span
                     className={cn(
                       "w-full rounded-t-xl border border-b-0 transition-colors duration-300",
@@ -652,7 +653,13 @@ function VoteView() {
             them, so the board stepped in at the fourth row for no reason a
             reader could see. Full width now, which is the podium's width,
             which is the tile's width. */}
-        <div className="flex w-full flex-col gap-2">
+        <div
+          className={styles.cityRows}
+          style={{
+            "--city-row-count": rest.length,
+            "--compact-row-count": Math.ceil(rest.length / 2),
+          } as CSSProperties}
+        >
           {rest.map((city, i) => {
             const votes = counts[city.id] ?? 0;
             const voted = hasVoted(city.id);
@@ -673,9 +680,8 @@ function VoteView() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: reduced ? 0 : 0.3 + i * 0.05, duration: 0.35 }}
                 className={cn(
-                  // 52px floor: these are the primary targets on this board and
-                  // a 40px row is under every platform minimum.
-                  "group relative min-h-[52px] overflow-hidden rounded-xl border px-3 py-2.5 text-left outline-none",
+                  styles.cityRow,
+                  "group relative overflow-hidden rounded-xl border text-left outline-none",
                   "transition-[transform,border-color,box-shadow,background-color] duration-300",
                   "focus-visible:ring-2 focus-visible:ring-white/70",
                   voted
@@ -710,17 +716,17 @@ function VoteView() {
                   className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/12 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[420%] motion-reduce:hidden"
                 />
 
-                <div className="relative flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="w-5 shrink-0 font-chrome text-[10px] tabular-nums text-white/40">
+                <div className={cn(styles.rowBody, "relative flex items-center justify-between")}>
+                  <div className={cn(styles.rowCity, "flex min-w-0 items-center")}>
+                    <span className="shrink-0 font-chrome text-[10px] tabular-nums text-white/40">
                       {String(i + 4).padStart(2, "0")}
                     </span>
-                    <span className="truncate font-headline text-base tracking-wide">
+                    <span className={cn(styles.cityName, "truncate font-headline tracking-wide")}>
                       {city.name}
                     </span>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className={cn(styles.rowActions, "flex shrink-0 items-center")}>
                     <VoteCount votes={votes} className="text-xs text-white" />
 
                     {voted ? (
@@ -745,6 +751,7 @@ function VoteView() {
               </motion.button>
             );
           })}
+        </div>
         </div>
         </section>
       </div>

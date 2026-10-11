@@ -45,12 +45,9 @@ export function SignInIcon({
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // DEV's supplied user mark is intentionally stationary. Only DOTM keeps
-    // the delayed attention nudge used by its animated login mark.
-    if (!isDotm) return;
     const timer = setTimeout(() => setNudging(true), nudgeDelayMs);
     return () => clearTimeout(timer);
-  }, [isDotm, nudgeDelayMs]);
+  }, [nudgeDelayMs]);
 
   // Escape closes, and so does a click outside. Both are what a visitor tries
   // first, and a popover that survives them feels stuck rather than firm.
@@ -76,7 +73,7 @@ export function SignInIcon({
     <div
       ref={wrapRef}
       className={cn(
-        placement === "inline" ? "relative z-40 mt-4 h-14 w-14 self-center" : "absolute right-5 top-5 z-40",
+        placement === "inline" ? cn("relative z-40 mt-4 self-center", isDotm ? "h-14 w-14" : "h-11 w-11") : "absolute right-5 top-5 z-40",
         className,
       )}
     >
@@ -88,8 +85,10 @@ export function SignInIcon({
           <span
             aria-hidden="true"
             className={cn(
-              "signin-nudge-ring pointer-events-none absolute right-0 top-0 h-14 w-14 rounded-full border",
-              isDotm ? "border-white/45" : "border-white",
+              "pointer-events-none absolute right-0 top-0",
+              isDotm
+                ? "signin-nudge-ring h-14 w-14 rounded-full border border-white/45"
+                : "dev-signin-halo h-11 w-11 rounded-sm border-2 border-white/90",
             )}
           />
         )}
@@ -101,14 +100,15 @@ export function SignInIcon({
           aria-haspopup="dialog"
           aria-label="Sign in"
           className={cn(
-            "relative flex h-14 w-14 items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-            nudging && !open && "signin-nudge",
+            "relative flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+            isDotm ? "h-14 w-14" : "h-11 w-11",
+            nudging && !open && (isDotm ? "signin-nudge" : "dev-signin-nudge"),
             isDotm
               ? "rounded-full transition-transform focus-visible:ring-white focus-visible:ring-offset-black"
               : "win98-border win98-press bg-persona-surface focus-visible:ring-[#0a2f5c] focus-visible:ring-offset-[#245edb]",
           )}
         >
-          {isDotm ? <DotmLoginMark /> : <DevUserIcon />}
+          {isDotm ? <DotmLoginMark /> : <DevLoginIcon />}
         </button>
       </div>
 
@@ -172,19 +172,19 @@ function DotmLoginMark() {
 }
 
 /**
- * DEV: the supplied user mark, kept completely still.
+ * DEV: the supplied computer mark, nudged by its button until sign-in opens.
  */
-function DevUserIcon() {
+function DevLoginIcon() {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/images/dev/login-user.png"
+      src="/images/dev/login-computer-transparent.png"
       alt=""
       width={56}
       height={56}
       aria-hidden="true"
       draggable={false}
-      className="h-9 w-9 object-contain"
+      className="h-10 w-10 object-contain"
     />
   );
 }

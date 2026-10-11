@@ -50,6 +50,16 @@ const FPS = 25;
 
 const JOBS = [
   {
+    // Shoot at Site: preserve the coloured director and pale-blue camera fill.
+    // A tighter key than the other clips removes only the near-white backdrop.
+    source: "movie-director.mp4",
+    out: join(APP, "public", "images", "dotm", "shoot-at-site-icon.webp"),
+    args: [
+      "-vf",
+      `colorkey=0xFFFFFF:0.03:0.015,format=rgba,fps=${FPS},scale=${SIZE}:${SIZE}`,
+    ],
+  },
+  {
     // DEV's Services desktop launcher: a music workstation on a white card.
     // The desktop container is already `iconBoxVariant="none"`, so the square
     // users can see is part of the clip itself. Key the card out and keep the
@@ -228,7 +238,12 @@ const JOBS = [
   },
 ];
 
-for (const job of JOBS) {
+// Optional source names let one icon be rebuilt without replacing other assets.
+const sources = new Set(process.argv.slice(2));
+for (const source of sources) {
+  if (!JOBS.some((job) => job.source === source)) throw new Error(`Unknown icon source: ${source}`);
+}
+for (const job of JOBS.filter((job) => sources.size === 0 || sources.has(job.source))) {
   mkdirSync(dirname(job.out), { recursive: true });
   execFileSync(
     "ffmpeg",
