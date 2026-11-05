@@ -4,6 +4,24 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      // Keep host, canonical metadata and sitemap signals on dotm.in.
+      {
+        source: "/",
+        has: [{ type: "host" as const, value: "www.dotm.in" }],
+        destination: "https://dotm.in/enter",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [{ type: "host" as const, value: "www.dotm.in" }],
+        destination: "https://dotm.in/:path*",
+        permanent: true,
+      },
+      { source: "/", destination: "/enter", permanent: true },
+    ];
+  },
   async headers() {
     return [{
       source: "/:path*",
